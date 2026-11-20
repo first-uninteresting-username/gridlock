@@ -8,43 +8,10 @@
   <style>
     html, body { margin: 0; height: 100%; background: #0d0f12; overflow: hidden; }
     #game canvas { display: block; image-rendering: pixelated; }
-    button { font: 600 14px system-ui, sans-serif; color: #fff; background: #2a3039; border: 1px solid #4a5360; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
-    button:hover { background: #38414d; }
-    #menu-btn { position: fixed; right: 12px; top: 10px; opacity: 0.85; }
-    #menu { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8, 10, 13, 0.72); color: #eee; font: 14px/1.5 system-ui, sans-serif; }
-    #menu.open { display: flex; }
-    #menu .panel { min-width: 320px; max-width: min(520px, 92vw); padding: 20px 24px; background: #161a20; border: 1px solid #343b46; border-radius: 10px; box-shadow: 0 10px 40px #000a; }
-    #menu h1 { margin: 0 0 12px; font-size: 22px; letter-spacing: 0.04em; }
-    #menu h2 { margin: 16px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #8a94a3; }
-    #menu table { border-collapse: collapse; width: 100%; }
-    #menu td { padding: 3px 0; vertical-align: top; }
-    #menu td:first-child { padding-right: 16px; white-space: nowrap; }
-    #menu kbd { font: 12px ui-monospace, monospace; background: #262c35; border: 1px solid #3c4552; border-radius: 4px; padding: 1px 6px; }
-    #menu label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
-    #menu .actions { margin-top: 18px; display: flex; justify-content: flex-end; }
   </style>
 </head>
 <body>
   <div id="game"></div>
-  <button id="menu-btn" type="button">Menu (Esc)</button>
-  <div id="menu">
-    <div class="panel">
-      <h1>Gridlock</h1>
-      <h2>Controls</h2>
-      <table>
-        <tr><td><kbd>WASD</kbd> / <kbd>Arrows</kbd></td><td>Walk and drive. With mouse aim, on foot: move in screen directions.</td></tr>
-        <tr><td><kbd>Shift</kbd></td><td>Sprint while walking forward (on foot)</td></tr>
-        <tr><td><kbd>Mouse</kbd></td><td>Aim (on foot)</td></tr>
-        <tr><td><kbd>Left click</kbd> / <kbd>Space</kbd></td><td>Shoot (on foot). Space is also the handbrake in a car.</td></tr>
-        <tr><td><kbd>E</kbd> / <kbd>F</kbd> / <kbd>Enter</kbd></td><td>Get in or out of a car</td></tr>
-        <tr><td><kbd>Q</kbd></td><td>Switch weapon</td></tr>
-        <tr><td><kbd>Esc</kbd></td><td>Open or close this menu</td></tr>
-      </table>
-      <h2>Settings</h2>
-      <label><input type="checkbox" id="opt-mouse-aim" checked> Mouse aim (otherwise rotate with A / D)</label>
-      <div class="actions"><button id="menu-resume" type="button">Resume</button></div>
-    </div>
-  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
