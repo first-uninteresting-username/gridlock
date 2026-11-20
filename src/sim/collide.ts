@@ -1,4 +1,5 @@
 import { carHitsWorld, carPoints, type Car } from './car';
+import { bodyHitsWorld } from './player';
 import { CAR } from './tuning';
 import type { SolidQuery } from './types';
 
@@ -46,5 +47,36 @@ export function collideCars(a: Car, b: Car, world: SolidQuery): boolean {
     a.vx -= j * ia * nx; a.vy -= j * ia * ny;
     b.vx += j * ib * nx; b.vy += j * ib * ny;
   }
+  return true;
+}
+
+/** Something with a circular footprint that can be shoved by other bodies. */
+export interface RoundBody {
+  x: number;
+  y: number;
+  readonly r: number;
+}
+
+/**
+ * Push two overlapping circles apart until they just touch. `aShare` (0..1) is the fraction of
+ * the overlap A gives up, B takes the rest; a body that would be pushed into a wall yields its
+ * share to the other one. Returns true if they were overlapping.
+ */
+export function separateBodies(a: RoundBody, b: RoundBody, world: SolidQuery, aShare: number): boolean {
+  const dx = b.x - a.x, dy = b.y - a.y, min = a.r + b.r;
+  const d2 = dx * dx + dy * dy;
+  if (d2 >= min * min) return false;
+
+  const d = Math.sqrt(d2);
+  // Coincident centres have no direction; pick an arbitrary axis so they still come apart.
+  const nx = d > 1e-6 ? dx / d : 1, ny = d > 1e-6 ? dy / d : 0;
+  const overlap = min - d;
+  let pa = overlap * aShare, pb = overlap - pa;
+  const aBlocked = pa > 0 && bodyHitsWorld(world, a.x - nx * pa, a.y - ny * pa, a.r);
+  const bBlocked = pb > 0 && bodyHitsWorld(world, b.x + nx * pb, b.y + ny * pb, b.r);
+  if (aBlocked && !bBlocked) pb = overlap;
+  else if (bBlocked && !aBlocked) pa = overlap;
+  a.x -= nx * pa; a.y -= ny * pa;
+  b.x += nx * pb; b.y += ny * pb;
   return true;
 }

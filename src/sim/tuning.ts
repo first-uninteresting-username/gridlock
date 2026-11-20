@@ -15,6 +15,8 @@ export const CAR = {
 export const PLAYER = {
   radius: 9,
   walkSpeed: 160,
+  /** Forward speed while sprinting (Shift held). */
+  sprintSpeed: 280,
   backSpeed: 90,
   turnRate: 4,
   /** How far from a car's body you can be and still get in. */

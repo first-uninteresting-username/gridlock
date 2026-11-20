@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { CAR_MODELS, CAR_MODEL_IDS, type CarModelId } from '../sim/models';
 import { CAR_ART } from './pixelart/cars';
+import { GLYPH_ART, ICON_ART } from './pixelart/font';
 import { DRIVER_BODY_ART, GUN_PISTOL_ART, GUN_SMG_ART, PED_BODY_ART, PED_HEAD_ART, PLAYER_BODY_ART, PLAYER_FOOT_ART, PLAYER_HEAD_ART } from './pixelart/people';
 import { mapHeight, mapWidth, paintPixelMap, type PixelMap } from './pixelart/pixelMap';
 import { BLOOD_ART, CASH_ART, PICKUP_ART, WHEEL_ART } from './pixelart/props';
@@ -55,6 +56,9 @@ export function paintArt(textures: Phaser.Textures.TextureManager): void {
     }
   }
   for (const [key, map] of Object.entries(SPRITES)) paintPixelMap(textures, key, map);
+  // HUD art is screen-space, so it is not in the world-size SPRITES table; it is painted at one
+  // texel per art pixel all the same. See Hud for how it is kept crisp under the world camera zoom.
+  for (const [key, map] of Object.entries({ ...GLYPH_ART, ...ICON_ART })) paintPixelMap(textures, key, map);
 }
 
 /** Adds an art sprite displayed at its world size. */

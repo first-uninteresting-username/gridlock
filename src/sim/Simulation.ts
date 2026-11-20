@@ -1,4 +1,4 @@
-import { collideCars } from './collide';
+import { collideCars, separateBodies } from './collide';
 import { carContains, carSpeed, stepCar, type Car } from './car';
 import { createPedestrian, killPedestrian, panic, resetPedestrian, sidewalkSpots, stepPedestrian, type Pedestrian } from './pedestrian';
 import { findCarToEnter, findExitSpot, stepOnFoot, type Player } from './player';
@@ -112,6 +112,7 @@ export class Simulation {
     else stepOnFoot(p, dt, input, this.world, this.cars);
 
     this.stepPedestrians(dt);
+    this.resolveBodyCollisions();
     this.stepTrigger(dt, input);
     this.stepBullets(dt);
     this.stepPickups(dt);
@@ -169,6 +170,27 @@ export class Simulation {
         panic(p, p.x - nx * side, p.y - ny * side, this.random);
       }
       if (!runOver) stepPedestrian(p, dt, this.world, this.cars, this.random);
+    }
+  }
+
+  /** Keep living bodies from overlapping: pedestrians avoid each other and the player on foot. */
+  private resolveBodyCollisions(): void {
+    const peds = this.pedestrians, player = this.player;
+    const onFoot = player.car === null;
+    // A couple of relaxation passes settle clusters where several bodies overlap at once.
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 0; i < peds.length; i++) {
+        const a = peds[i];
+        if (a.state === 'dead') continue;
+        for (let j = i + 1; j < peds.length; j++) {
+          const b = peds[j];
+          if (b.state === 'dead') continue;
+          separateBodies(a, b, this.world, 0.5);
+        }
+      }
+      // The player has the right of way: pedestrians step aside rather than shoving them.
+      // Doing this last keeps them clear of the player at the end of the frame.
+      if (onFoot) for (const a of peds) if (a.state !== 'dead') separateBodies(player, a, this.world, 0);
     }
   }
 
