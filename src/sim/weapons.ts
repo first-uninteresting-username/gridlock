@@ -28,6 +28,7 @@ export interface MeleeDef extends WeaponBase {
 
 export type WeaponDef = GunDef | MeleeDef;
 
+
 export const WEAPONS: Record<WeaponId, WeaponDef> = {
   fists: { id: 'fists', name: 'Fists', damage: 9, interval: 0.4, kind: 'melee', reach: 26, arc: 0.9 },
   knife: { id: 'knife', name: 'Knife', damage: 20, interval: 0.3, kind: 'melee', reach: 32, arc: 0.7 },
