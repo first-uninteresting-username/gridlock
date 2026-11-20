@@ -5107,6 +5107,198 @@
        "value": 100
       }
      ]
+    },
+    {
+     "id": 115,
+     "name": "",
+     "type": "pickup",
+     "x": 992,
+     "y": 608,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "pistol"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 36
+      }
+     ]
+    },
+    {
+     "id": 116,
+     "name": "",
+     "type": "pickup",
+     "x": 2976,
+     "y": 480,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "pistol"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 36
+      }
+     ]
+    },
+    {
+     "id": 117,
+     "name": "",
+     "type": "pickup",
+     "x": 992,
+     "y": 1440,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "pistol"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 36
+      }
+     ]
+    },
+    {
+     "id": 118,
+     "name": "",
+     "type": "pickup",
+     "x": 2976,
+     "y": 1440,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "pistol"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 36
+      }
+     ]
+    },
+    {
+     "id": 119,
+     "name": "",
+     "type": "pickup",
+     "x": 992,
+     "y": 2528,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "pistol"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 36
+      }
+     ]
+    },
+    {
+     "id": 120,
+     "name": "",
+     "type": "pickup",
+     "x": 2976,
+     "y": 2528,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "pistol"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 36
+      }
+     ]
+    },
+    {
+     "id": 121,
+     "name": "",
+     "type": "pickup",
+     "x": 992,
+     "y": 3360,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "pistol"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 36
+      }
+     ]
+    },
+    {
+     "id": 122,
+     "name": "",
+     "type": "pickup",
+     "x": 2976,
+     "y": 3616,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "pistol"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 36
+      }
+     ]
     }
    ],
    "opacity": 1,
