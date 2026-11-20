@@ -42,6 +42,7 @@ export class GameScene extends Phaser.Scene {
   private keys!: Keys;
   private wantToggle = false;
   private wantAction = false;
+  private wantReload = false;
   private acc = 0;
 
   constructor() {
@@ -90,6 +91,7 @@ export class GameScene extends Phaser.Scene {
     kb.on('keydown-ENTER', toggle);
     // F is the general action key: exit/enter a car or rob whoever is in reach.
     kb.on('keydown-F', (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantAction = true; });
+    kb.on('keydown-R', (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantReload = true; });
     kb.on('keydown-ESC', () => this.menu.toggle());
 
     // 1-4 pick a weapon slot directly; Ctrl + 1/2 picks a gadget slot.
@@ -123,7 +125,7 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointermove', () => { this.pointerSeen = true; });
     this.input.on('pointerdown', () => { this.pointerSeen = true; });
     // Drop held buttons/keys when the menu opens so nothing is stuck on resume.
-    this.menu.onToggle = (open) => { if (open) { this.wantToggle = false; this.wantAction = false; this.acc = 0; } };
+    this.menu.onToggle = (open) => { if (open) { this.wantToggle = false; this.wantAction = false; this.wantReload = false; this.acc = 0; } };
   }
 
   private readInput(): Input {
@@ -158,6 +160,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.menu.open) {
       if (this.wantToggle) { this.wantToggle = false; this.sim.toggleCar(); }
       if (this.wantAction) { this.wantAction = false; this.sim.act(); }
+      if (this.wantReload) { this.wantReload = false; this.sim.reload(); }
       const input = this.readInput();
       this.acc += frame;
       while (this.acc >= STEP) { this.sim.step(STEP, input); this.acc -= STEP; }
@@ -191,10 +194,15 @@ export class GameScene extends Phaser.Scene {
     this.hud.setWanted(this.sim.wanted, MAX_WANTED);
     this.hud.setCash(this.sim.cash);
     this.hud.setLoadout(ars.weapons, ars.weaponSlot, ars.gadgetSlot, ars.gadgetHeld);
-    const ammo = ars.ammo[weapon] ?? 0;
+    const def = WEAPONS[weapon];
+    const reserve = ars.ammo[weapon] ?? 0;
+    const ammo = def.kind === 'gun'
+      ? `${ars.loaded[weapon] ?? 0}/${reserve === Infinity ? '∞' : reserve}`
+      : (reserve === Infinity ? '∞' : reserve);
+    const reloading = ars.reload > 0;
     this.hud.setStatus(car
-      ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
-      : `On foot · ${WEAPONS[weapon].name} ${ammo === Infinity ? '∞' : ammo}`);
+      ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}${reloading ? ' · RELOADING' : ''}`
+      : `On foot · ${def.name} ${reloading ? 'RELOADING' : ammo}`);
     this.hud.sync();
     this.menu.sync();
   }
