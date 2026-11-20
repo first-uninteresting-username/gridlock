@@ -3,6 +3,7 @@ import { BuildingLayer } from '../render/BuildingLayer';
 import { CameraRig } from '../render/CameraRig';
 import { CarView } from '../render/CarView';
 import { Effects } from '../render/Effects';
+import { PedestrianView } from '../render/PedestrianView';
 import { PickupView } from '../render/PickupView';
 import { PlayerView } from '../render/PlayerView';
 import { carSpeed, createCar } from '../sim/car';
@@ -10,7 +11,7 @@ import { createPlayer } from '../sim/player';
 import { MAX_WANTED, Simulation, type Pickup } from '../sim/Simulation';
 import { WEAPONS } from '../sim/weapons';
 import { CAR_MODELS } from '../sim/models';
-import { CAR, KMH_PER_PX } from '../sim/tuning';
+import { CAR, KMH_PER_PX, PED } from '../sim/tuning';
 import type { Input } from '../sim/types';
 import { Hud } from '../ui/Hud';
 import { Menu } from '../ui/Menu';
@@ -25,6 +26,7 @@ export class GameScene extends Phaser.Scene {
   private sim!: Simulation;
   private carViews: CarView[] = [];
   private pickupViews: PickupView[] = [];
+  private pedViews: PedestrianView[] = [];
   private playerView!: PlayerView;
   private effects!: Effects;
   private buildings!: BuildingLayer;
@@ -53,6 +55,8 @@ export class GameScene extends Phaser.Scene {
     const cars = data.cars.map((s) => createCar(s.x, s.y, s.a, s.color ?? 0xffffff, CAR_MODELS[s.model ?? 'sedan']));
     const pickups: Pickup[] = data.pickups.map((k) => ({ ...k, respawn: 0 }));
     this.sim = new Simulation(data.city, createPlayer(data.player.x, data.player.y, data.player.a), cars, pickups);
+    this.sim.populate(PED.count);
+    this.pedViews = this.sim.pedestrians.map((p) => new PedestrianView(this, p));
     this.carViews = cars.map((c) => new CarView(this, c));
     this.pickupViews = pickups.map((k) => new PickupView(this, k));
     this.effects = new Effects(this);
@@ -125,12 +129,15 @@ export class GameScene extends Phaser.Scene {
     const p = this.sim.player, car = p.car;
     this.rig.update(frame, p.x, p.y, car?.vx ?? 0, car?.vy ?? 0, car ? Math.min(carSpeed(car) / CAR.cameraRefSpeed, 1) : 0);
     for (const v of this.carViews) v.sync();
+    for (const v of this.pedViews) v.sync();
     for (const v of this.pickupViews) v.sync(time / 1000);
     this.playerView.sync(this.sim.arsenal.current);
     this.effects.update(frame, this.sim.cars, this.sim.bullets);
+    this.sim.view = this.cameras.main.worldView; // replacement pedestrians appear outside this
     this.buildings.draw(this.rig.x, this.rig.y, this.cameras.main.worldView);
     const ars = this.sim.arsenal, ammo = ars.ammo[ars.current] ?? 0;
     this.hud.setWanted(this.sim.wanted, MAX_WANTED);
+    this.hud.setCash(this.sim.cash);
     this.hud.setStatus(car
       ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
       : `On foot · ${WEAPONS[ars.current].name} ${ammo === Infinity ? '∞' : ammo}`);

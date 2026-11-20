@@ -44,6 +44,7 @@ export class Effects {
         this.add(e.x + Math.cos(e.a) * 4, e.y + Math.sin(e.a) * 4, { life: 0.05, r: 6, color: 0xfff1a8 });
         break;
       case 'impact':
+        if (e.on === 'ped') { this.burst(e.x, e.y, 6, 150, { life: 0.3, r: 1.8, color: 0xa3151a }); break; }
         this.burst(e.x, e.y, 4, 220, { life: 0.15, r: 1.6, color: e.on === 'car' ? 0xffb347 : 0xfff1a8 });
         if (e.on === 'wall') this.add(e.x, e.y, { life: 0.4, r: 3, grow: 14, color: 0xb0aaa0, alpha: 0.5 });
         break;
@@ -54,6 +55,9 @@ export class Effects {
         this.add(e.x, e.y, { life: 0.3, r: 20, grow: 320, color: 0xfff1a8, alpha: 0.9 });
         this.burst(e.x, e.y, 18, 260, { life: 0.5, r: 7, grow: 20, color: 0xff7a1a });
         this.burst(e.x, e.y, 14, 70, { life: 1.6, r: 10, grow: 30, color: 0x3a3a3a, alpha: 0.6 });
+        break;
+      case 'pedKilled':
+        this.burst(e.ped.x, e.ped.y, e.by === 'explosion' ? 14 : 10, 170, { life: 0.4, r: 2.4, color: 0xa3151a });
         break;
       case 'pickup':
         this.burst(e.x, e.y, 10, 120, { life: 0.3, r: 2.5, color: 0xffd34d });
