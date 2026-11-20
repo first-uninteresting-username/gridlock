@@ -43,6 +43,10 @@ export interface Pedestrian {
   /** Seconds until this officer can arrest or shoot again. */
   arrestCooldown: number;
   shootCooldown: number;
+  /** True once robbed; a victim can only be robbed once. */
+  robbed: boolean;
+  /** Seconds until this pedestrian decides whether to report a crime; -1 = not a witness. */
+  report: number;
 }
 
 export const PED_LOOKS = 8;
@@ -65,6 +69,7 @@ export function resetPedestrian(p: Pedestrian, x: number, y: number, random: () 
     tx: x, ty: y, dx: 0, dy: 0, fear: 0, fleeA: 0, stuck: 0, wait: 0, vx: 0, vy: 0, deadFor: 0,
     look: Math.floor(random() * PED_LOOKS), pace: 0.8 + random() * 0.4,
     police, arrestCooldown: 0, shootCooldown: 0,
+    robbed: false, report: -1,
   });
 }
 
