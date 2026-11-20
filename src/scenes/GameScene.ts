@@ -132,6 +132,7 @@ export class GameScene extends Phaser.Scene {
     for (const v of this.pickupViews) v.sync(time / 1000);
     this.playerView.sync(this.sim.arsenal.current);
     this.effects.update(frame, this.sim.cars, this.sim.bullets);
+    this.sim.view = this.cameras.main.worldView; // replacement pedestrians appear outside this
     this.buildings.draw(this.rig.x, this.rig.y, this.cameras.main.worldView);
     const ars = this.sim.arsenal, ammo = ars.ammo[ars.current] ?? 0;
     this.hud.setStatus(car

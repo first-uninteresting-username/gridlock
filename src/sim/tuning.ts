@@ -72,8 +72,10 @@ export const PED = {
   explosionScareRange: 600,
   /** How long a body lies there before that pedestrian is replaced by a fresh one. */
   corpseTime: 6,
-  /** Replacements only appear at least this far from the player (just off screen). */
-  respawnDistance: 900,
+  /** Replacements appear at least this far outside the camera view. */
+  respawnMargin: 200,
+  /** Stand-in for the view when none is known: how far from the player replacements appear. */
+  respawnFallbackDistance: 1200,
   /** Fraction of a car's velocity a run-over body is flung with. */
   knockback: 0.7,
 } as const;

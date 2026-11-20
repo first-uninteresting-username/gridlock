@@ -29,6 +29,11 @@ export class Simulation {
   readonly bullets: Bullet[] = [];
   readonly pedestrians: Pedestrian[] = [];
   readonly arsenal: Arsenal = createArsenal();
+  /**
+   * The world rectangle the camera shows, kept up to date by the renderer. Replacement pedestrians
+   * only appear outside it. Until it is set, they just appear far from the player.
+   */
+  view: { x: number; y: number; width: number; height: number } | null = null;
   /** Filled during step(); the consumer clears it after reading. */
   readonly events: SimEvent[] = [];
 
@@ -55,11 +60,14 @@ export class Simulation {
   }
 
   /** A random sidewalk spot at least `minDist` from the player, or null if none turned up. */
-  private randomSpot(minDist: number): [number, number] | null {
-    const p = this.player;
-    for (let tries = 0; tries < 20 && this.spots.length > 0; tries++) {
+  private randomSpot(minDist: number, outsideView = false): [number, number] | null {
+    const p = this.player, v = this.view, m = PED.respawnMargin;
+    for (let tries = 0; tries < 30 && this.spots.length > 0; tries++) {
       const s = this.spots[Math.floor(this.random() * this.spots.length)];
-      if (Math.hypot(s[0] - p.x, s[1] - p.y) >= minDist) return s;
+      if (Math.hypot(s[0] - p.x, s[1] - p.y) < minDist) continue;
+      // The margin covers the camera catching up to a fast car and the pedestrian's own size.
+      if (outsideView && v && s[0] > v.x - m && s[0] < v.x + v.width + m && s[1] > v.y - m && s[1] < v.y + v.height + m) continue;
+      return s;
     }
     return null;
   }
@@ -130,7 +138,7 @@ export class Simulation {
       if (p.state === 'dead') {
         stepPedestrian(p, dt, this.world, this.cars, this.random);
         if (p.deadFor > PED.corpseTime) { // replace the body with a fresh pedestrian, out of sight
-          const spot = this.randomSpot(PED.respawnDistance);
+          const spot = this.randomSpot(this.view ? 0 : PED.respawnFallbackDistance, true);
           if (spot) resetPedestrian(p, spot[0], spot[1], this.random);
         }
         continue;

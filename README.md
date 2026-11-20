@@ -86,7 +86,7 @@ properties, so existing maps are not touched by `gen:tileset`.
 - **pickups**: points with `weapon` (`smg`) and `ammo`. They respawn 30 s after being collected.
 
 Pedestrians are not placed in the map: the game spawns them on random sidewalk tiles at start and
-replaces the dead ones out of sight. Weapons, car health, explosion strength and pedestrian
+replaces the dead ones outside the camera view. Weapons, car health, explosion strength and pedestrian
 behaviour (count, speeds, scare ranges) are tuned in `src/sim/weapons.ts` and `src/sim/tuning.ts`.
 
 ## Story
