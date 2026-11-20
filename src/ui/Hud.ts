@@ -4,6 +4,8 @@ export class Hud {
   private readonly wantedEl = document.getElementById('wanted')!;
   private last = '';
   private lastWanted = -1;
+  private readonly cashEl = document.getElementById('cash')!;
+  private lastCash = -1;
 
   setStatus(text: string): void {
     if (text === this.last) return;
@@ -16,5 +18,11 @@ export class Hud {
     if (level === this.lastWanted) return;
     this.lastWanted = level;
     this.wantedEl.textContent = '★'.repeat(level) + '☆'.repeat(max - level);
+  }
+
+  setCash(dollars: number): void {
+    if (dollars === this.lastCash) return;
+    this.lastCash = dollars;
+    this.cashEl.textContent = `$${dollars.toLocaleString('en-US')}`;
   }
 }

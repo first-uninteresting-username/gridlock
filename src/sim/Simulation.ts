@@ -5,14 +5,17 @@ import { DAMAGE, PICKUP } from './tuning';
 import type { Input, SolidQuery } from './types';
 import { createArsenal, WEAPON_ORDER, WEAPONS, type Arsenal, type Bullet, type WeaponId } from './weapons';
 
-export interface Pickup {
+/** What a pickup gives you. */
+export type PickupContents =
+  | { readonly kind: 'weapon'; readonly weapon: WeaponId; readonly ammo: number }
+  | { readonly kind: 'cash'; readonly amount: number };
+
+export type Pickup = PickupContents & {
   readonly x: number;
   readonly y: number;
-  readonly weapon: WeaponId;
-  readonly ammo: number;
   /** Seconds until it reappears; 0 = available. */
   respawn: number;
-}
+};
 
 /** Things that happened during a step, for the renderer to turn into effects and sounds. */
 export type SimEvent =
@@ -20,7 +23,7 @@ export type SimEvent =
   | { type: 'impact'; x: number; y: number; on: 'wall' | 'car' }
   | { type: 'ignite'; car: Car }
   | { type: 'explosion'; x: number; y: number }
-  | { type: 'pickup'; x: number; y: number; weapon: WeaponId };
+  | { type: 'pickup'; x: number; y: number; kind: Pickup['kind'] };
 
 /** Highest wanted level. */
 export const MAX_WANTED = 5;
@@ -31,6 +34,8 @@ export class Simulation {
   readonly arsenal: Arsenal = createArsenal();
   /** Wanted level, 0..MAX_WANTED. Displayed only; nothing raises it or reacts to it yet. */
   wanted = 0;
+  /** Money in dollars, a whole number. Earned from cash pickups. */
+  cash = 0;
   /** Filled during step(); the consumer clears it after reading. */
   readonly events: SimEvent[] = [];
 
@@ -169,11 +174,16 @@ export class Simulation {
     for (const k of this.pickups) {
       if (k.respawn > 0) { k.respawn = Math.max(0, k.respawn - dt); continue; }
       if (Math.hypot(p.x - k.x, p.y - k.y) > PICKUP.radius) continue;
-      const had = (this.arsenal.ammo[k.weapon] ?? 0) > 0;
-      this.arsenal.ammo[k.weapon] = (this.arsenal.ammo[k.weapon] ?? 0) + k.ammo;
-      if (!had) { this.arsenal.current = k.weapon; this.arsenal.cooldown = 0; }
+      if (k.kind === 'weapon') this.giveWeapon(k.weapon, k.ammo);
+      else this.cash += k.amount;
       k.respawn = PICKUP.respawn;
-      this.events.push({ type: 'pickup', x: k.x, y: k.y, weapon: k.weapon });
+      this.events.push({ type: 'pickup', x: k.x, y: k.y, kind: k.kind });
     }
+  }
+
+  private giveWeapon(weapon: WeaponId, ammo: number): void {
+    const had = (this.arsenal.ammo[weapon] ?? 0) > 0;
+    this.arsenal.ammo[weapon] = (this.arsenal.ammo[weapon] ?? 0) + ammo;
+    if (!had) { this.arsenal.current = weapon; this.arsenal.cooldown = 0; }
   }
 }
