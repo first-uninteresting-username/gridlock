@@ -1,42 +1,59 @@
 import type Phaser from 'phaser';
 import { CAR_MODELS, CAR_MODEL_IDS, type CarModelId } from '../sim/models';
+import { CAR_ART } from './pixelart/cars';
+import { GUN_PISTOL_ART, GUN_SMG_ART, PED_BODY_ART, PED_HEAD_ART, PLAYER_BODY_ART, PLAYER_FOOT_ART, PLAYER_HEAD_ART } from './pixelart/people';
+import { mapHeight, mapWidth, paintPixelMap, type PixelMap } from './pixelart/pixelMap';
+import { BLOOD_ART, CASH_ART, PICKUP_ART, WHEEL_ART } from './pixelart/props';
 
-/** Every sprite is an SVG in public/art/, rasterised once at load. Sizes are in world pixels. */
+/**
+ * World pixels per art pixel. Every sprite is a text pixel map (src/render/pixelart/), painted into a
+ * texture once at boot with one texel per art pixel, and shown at this scale. The game canvas is
+ * rendered at one canvas pixel per art pixel, so this is also the size of the chunky pixels you see.
+ * Keep it in step with ART_PIXEL in tools/tiles.mjs.
+ */
+export const ART_PIXEL = 2;
+
 const FIXED_SPRITES = {
-  'car-shadow': [48, 26],
-  'car-wheel': [10, 5],
-  'player-foot': [6, 4],
-  'player-body': [12, 20],
-  'player-head': [10, 10],
-  'gun-pistol': [9, 3],
-  'gun-smg': [13, 6],
-  'ped-body': [10, 16],
-  'ped-head': [8, 8],
-  'ped-blood': [30, 30],
-  pickup: [40, 40],
-  cash: [40, 40],
-} as const satisfies Record<string, readonly [number, number]>;
+  'car-wheel': WHEEL_ART,
+  'player-foot': PLAYER_FOOT_ART,
+  'player-body': PLAYER_BODY_ART,
+  'player-head': PLAYER_HEAD_ART,
+  'gun-pistol': GUN_PISTOL_ART,
+  'gun-smg': GUN_SMG_ART,
+  'ped-body': PED_BODY_ART,
+  'ped-head': PED_HEAD_ART,
+  'ped-blood': BLOOD_ART,
+  pickup: PICKUP_ART,
+  cash: CASH_ART,
+} as const satisfies Record<string, PixelMap>;
 
 /** Each car model has its own body (tinted to the car's colour), trim and wreck, drawn at the size of its box. */
 export type CarSpriteKey = `car-${CarModelId}-${'body' | 'trim' | 'wrecked'}`;
 
 export type SpriteKey = keyof typeof FIXED_SPRITES | CarSpriteKey;
 
-const SPRITES = { ...FIXED_SPRITES } as Record<SpriteKey, readonly [number, number]>;
+const SPRITES = { ...FIXED_SPRITES } as Record<SpriteKey, PixelMap>;
 for (const id of CAR_MODEL_IDS) {
-  const m = CAR_MODELS[id];
-  for (const part of ['body', 'trim', 'wrecked'] as const) SPRITES[`car-${id}-${part}`] = [m.halfLength * 2, m.halfWidth * 2];
+  for (const part of ['body', 'trim', 'wrecked'] as const) SPRITES[`car-${id}-${part}`] = CAR_ART[id][part];
 }
 
 export const carSprite = (id: CarModelId, part: 'body' | 'trim' | 'wrecked'): CarSpriteKey => `car-${id}-${part}`;
 
-/** Textures are rasterised at this multiple of their world size so they stay sharp when the camera zooms in. */
-const RASTER_SCALE = 4;
+/** The size a sprite is displayed at, in world pixels. */
+const worldSize = (map: PixelMap): [number, number] => [mapWidth(map) * ART_PIXEL, mapHeight(map) * ART_PIXEL];
 
-export function loadArt(load: Phaser.Loader.LoaderPlugin): void {
-  for (const [key, [w, h]] of Object.entries(SPRITES)) {
-    load.svg(key, `art/${key}.svg`, { width: w * RASTER_SCALE, height: h * RASTER_SCALE });
+/** Paints every sprite into a texture. Call once, from the boot scene's create(). */
+export function paintArt(textures: Phaser.Textures.TextureManager): void {
+  for (const id of CAR_MODEL_IDS) {
+    const { halfLength, halfWidth } = CAR_MODELS[id];
+    for (const part of ['body', 'trim', 'wrecked'] as const) {
+      const [w, h] = worldSize(CAR_ART[id][part]);
+      if (w !== halfLength * 2 || h !== halfWidth * 2) {
+        throw new Error(`car-${id}-${part} is ${w}x${h} world px but the ${id} box is ${halfLength * 2}x${halfWidth * 2}`);
+      }
+    }
   }
+  for (const [key, map] of Object.entries(SPRITES)) paintPixelMap(textures, key, map);
 }
 
 /** Adds an art sprite displayed at its world size. */
@@ -47,6 +64,6 @@ export function addSprite(scene: Phaser.Scene, key: SpriteKey, x = 0, y = 0): Ph
 
 /** Points an existing sprite at another art texture, keeping the world-size scale. */
 export function setSprite(img: Phaser.GameObjects.Image, key: SpriteKey): Phaser.GameObjects.Image {
-  const [w, h] = SPRITES[key];
+  const [w, h] = worldSize(SPRITES[key]);
   return img.setTexture(key).setDisplaySize(w, h);
 }

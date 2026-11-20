@@ -41,17 +41,16 @@ In dev builds, `window.gridlock.sim` exposes the simulation in the browser conso
 src/
   sim/        Gameplay rules: car models and handling, collisions, player, pedestrians. No Phaser imports.
   world/      The tile grid (City) and the Tiled map loader.
-  render/     Phaser views: cars, player, pedestrians, leaning buildings, follow camera. art.ts loads the SVG sprites.
+  render/     Phaser views: cars, player, pedestrians, leaning buildings, follow camera. art.ts paints the pixel-art sprites (maps in render/pixelart/).
   scenes/     Phaser scenes: Boot (asset loading) and Game (fixed 120 Hz sim + rendering).
   story/      Ink story (main.ink) and StoryRunner wrapper. Not wired into gameplay yet.
   ui/         DOM overlay (HUD).
 public/
   maps/city.tmj   The city, editable in Tiled.
-  tiles/city.svg  The tileset image.
-  art/            SVG sprites: cars (per model), wheel, player, pedestrians, weapons, pickup. Registered in src/render/art.ts.
+  tiles/city.svg  The tileset image (generated pixel art; do not hand-edit).
 tools/
   tiles.mjs       The tile catalogue (what each tile is).
-  gen-tileset.mjs Draws tiles/city.svg from the catalogue. Never touches the map.
+  gen-tileset.mjs Draws the pixel-art tiles/city.svg from the catalogue. Never touches the map.
   ink-plugin.ts   Vite plugin that compiles .ink files at build time.
 ```
 
@@ -99,8 +98,8 @@ properties, so existing maps are not touched by `gen:tileset`.
 
 Everything about a model (box size, health, mass, axles and so the wheel count, handling, how
 common it is) is one entry in `src/sim/models.ts`. To add one, add the entry and a `CarModelId`,
-then draw `public/art/car-<id>-body.svg`, `-trim.svg` and `-wrecked.svg` at the size of its box
-(twice `halfLength` by twice `halfWidth`; the body is white so it can be tinted).
+then draw its `body`, `trim` and `wrecked` pixel maps in `src/render/pixelart/cars.ts` at the size of its box
+(twice `halfLength` by twice `halfWidth` in world px, at 2 world px per art pixel; the body is white so it can be tinted).
 
 Pedestrians are not placed in the map: the game spawns them on random sidewalk tiles at start and
 replaces the dead ones outside the camera view. Weapons, explosion strength and pedestrian

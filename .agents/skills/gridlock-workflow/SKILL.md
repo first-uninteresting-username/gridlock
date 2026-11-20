@@ -30,7 +30,7 @@ git branch --show-current                     # must print <topic>, not main
   worktree, and do not `git stash` or reset anything you did not create.
 - If `ls ../gridlock/node_modules` is empty, run `nix develop -c npm ci` once in `~/Agents/gridlock`.
 - Read the nearby code before editing, and follow the "Code maintainability" section of AGENTS.md.
-  Art changes also need the `gridlock-svg-art` skill.
+  Art changes also need the `gridlock-pixel-art` skill.
 
 Check your work with `gridlock-verify` before shipping.
 

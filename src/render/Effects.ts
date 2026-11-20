@@ -60,7 +60,7 @@ export class Effects {
         this.burst(e.ped.x, e.ped.y, e.by === 'explosion' ? 14 : 10, 170, { life: 0.4, r: 2.4, color: 0xa3151a });
         break;
       case 'pickup':
-        this.burst(e.x, e.y, 10, 120, { life: 0.3, r: 2.5, color: 0xffd34d });
+        this.burst(e.x, e.y, 10, 120, { life: 0.3, r: 2.5, color: 0xffd23f });
         break;
     }
   }

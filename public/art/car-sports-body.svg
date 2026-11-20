@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="50" height="24" viewBox="0 0 50 24">
-  <!-- White so the game can tint it to each car's colour. -->
-  <path d="M6 0H24L43 2.5Q50 2.5 50 9.5V14.5Q50 21.5 43 21.5L24 24H6Q0 24 0 18V6Q0 0 6 0Z" fill="#fff"/>
-</svg>

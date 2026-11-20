@@ -9,7 +9,7 @@
 - Do not add `Co-Authored-By` trailers (or any other AI attribution) to commit messages or PRs.
 - Skills for this routine live in `.agents/skills/` (`.claude/skills` links to it): `gridlock-workflow`
   (start a branch, ship a PR), `gridlock-verify` (check and run the game), `gridlock-merge` (only when
-  asked to merge) and `gridlock-svg-art` (art rules and the house style).
+  asked to merge) and `gridlock-pixel-art` (art rules and the house style).
 
 ## Code maintainability
 
@@ -35,10 +35,15 @@
 
 ## Art
 
-- All art must be SVG: sprites, tiles, icons, textures. Do not add raster images (PNG, JPG, GIF,
-  WebP, etc.), and do not generate raster files from tools.
-- Sprite SVGs live in `public/art/` and are listed in `src/render/art.ts`, which loads them with
-  `load.svg` at 4x their world size so they stay sharp when the camera zooms in. The tileset is
-  generated as `public/tiles/city.svg` by `tools/gen-tileset.mjs`.
+- All world art is **pixel art**, authored as text pixel maps: one string per row, one palette
+  character per pixel (`src/render/pixelart/`). Do not add art files for sprites: no PNG, JPG, GIF,
+  WebP or SVG, and do not generate raster files from tools. Sprites are painted into canvas textures
+  at load.
+- Pixels stay pixels: no anti-aliasing, gradients, blur or partial pixels in the world. One art pixel
+  is `ART_PIXEL` (2) world pixels, and the game renders at one canvas pixel per art pixel.
+- Sprite maps live in `src/render/pixelart/` and are registered in `src/render/art.ts`. The tileset
+  is generated as pixel art into `public/tiles/city.svg` by `tools/gen-tileset.mjs` (an SVG of crisp
+  rects, because Tiled needs an image file); never hand-edit it.
 - Shapes that are computed every frame (building lean, bullet tracers, particles) are drawn with
-  Phaser Graphics in code. They are not art assets.
+  Phaser Graphics in code. They are not art assets, and they render pixelated on the same canvas.
+- Follow the `gridlock-pixel-art` skill for the palette, shape rules and how to add a sprite.
