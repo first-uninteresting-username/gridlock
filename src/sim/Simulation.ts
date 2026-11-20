@@ -3,7 +3,8 @@ import { carContains, carSpeed, stepCar, type Car } from './car';
 import { createPedestrian, killPedestrian, panic, resetPedestrian, sidewalkSpots, stepPedestrian, type Pedestrian } from './pedestrian';
 import { findCarToEnter, findExitSpot, stepOnFoot, type Player } from './player';
 import { DAMAGE, MUZZLE, PED, PICKUP } from './tuning';
-import type { Input, World } from './types';
+import { Traffic } from './traffic';
+import { NO_INPUT, type Input, type World } from './types';
 import { createArsenal, WEAPON_ORDER, WEAPONS, type Arsenal, type Bullet, type WeaponId } from './weapons';
 
 /** What a pickup gives you. */
@@ -49,6 +50,8 @@ export class Simulation {
 
   /** Where pedestrians can be placed: the centre of every sidewalk tile. */
   private readonly spots: [number, number][];
+  /** Drives every car with a seated driver except the one the player is in. */
+  private readonly traffic: Traffic;
 
   constructor(
     readonly world: World,
@@ -59,6 +62,7 @@ export class Simulation {
     private readonly random: () => number = Math.random,
   ) {
     this.spots = sidewalkSpots(world);
+    this.traffic = new Traffic(world);
   }
 
   /** Fill the city with `count` pedestrians on random sidewalks, none right next to the player. */
@@ -103,7 +107,10 @@ export class Simulation {
   step(dt: number, input: Input): void {
     const p = this.player;
     for (const c of this.cars) {
-      stepCar(c, dt, c === p.car && !c.wrecked ? input : null, this.world);
+      let carInput: Input = NO_INPUT;
+      if (c === p.car && !c.wrecked) carInput = input;
+      else if (c.driver && !c.wrecked && c.burning === null) carInput = this.traffic.input(c, c.driver, dt, this.random);
+      stepCar(c, dt, carInput, this.world);
       if (c.burning !== null && (c.burning -= dt) <= 0) this.explode(c);
     }
     for (let i = 0; i < this.cars.length; i++)

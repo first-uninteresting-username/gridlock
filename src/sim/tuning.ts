@@ -58,6 +58,24 @@ export const DRIVER = {
   spawnChance: 0.6,
 } as const;
 
+/** How the seated drivers drive the city's road grid. */
+export const TRAFFIC = {
+  /** Cruising speed in px/s; well below the player's top speed so traffic feels calmer. */
+  cruiseSpeed: 210,
+  /** Steering error in radians that calls for full lock. */
+  steerRange: 0.4,
+  /** How close a car must get to a waypoint before steering toward the next one. */
+  waypointRadius: 80,
+  /** Chance of turning rather than going straight at a junction. */
+  turnChance: 0.3,
+  /** Speed below which a car counts as stuck. */
+  stuckSpeed: 25,
+  /** Seconds stuck before a car picks a fresh route and reverses out of the jam. */
+  stuckTime: 2,
+  /** Seconds spent reversing to clear a building corner after getting stuck. */
+  reverseTime: 0.8,
+} as const;
+
 export const PED = {
   radius: 7,
   /** How many pedestrians the city keeps alive. */
