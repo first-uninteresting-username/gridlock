@@ -26,8 +26,11 @@ export interface SolidQuery {
   solidAt(x: number, y: number): boolean;
 }
 
-/** The ground a point is on, for things that care what they stand on (pedestrians avoid buildings and water). */
-export type GroundKind = 'road' | 'sidewalk' | 'grass' | 'water' | 'building';
+/** The ground a point is on, for things that care what they stand on (pedestrians avoid solid ground). */
+export type GroundKind = 'road' | 'sidewalk' | 'grass' | 'water' | 'tree' | 'building';
+
+/** Ground nobody can drive or walk through. */
+export const isSolidKind = (k: GroundKind): boolean => k === 'building' || k === 'water' || k === 'tree';
 
 /** A tile grid the simulation can walk around on. */
 export interface World extends SolidQuery {

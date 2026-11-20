@@ -3,7 +3,7 @@
 // map (public/maps/city.tmj), so keep the two in step when you add tiles.
 //
 // Properties a tile can carry (set them in Tiled: Tileset > select tile > Custom Properties):
-//   kind    "road" | "sidewalk" | "grass" | "water" | "building"  (required)
+//   kind    "road" | "sidewalk" | "grass" | "water" | "tree" | "building"  (required)
 //   height  float, buildings only: roof lean, about 0.1 (low) to 0.5 (tower)
 //   roof    color,  buildings only: roof colour
 
@@ -16,10 +16,13 @@ export const ROOFS = ['#8a8f98', '#9b8b7a', '#7d8a7a', '#a3a09a', '#8c7f8f', '#b
 export const HEIGHTS = [0.12, 0.24, 0.36, 0.48]; // low, mid, tall, tower
 
 // Ids (0-based, as Tiled shows them). Row 0 is ground; the following rows are buildings, one row per
-// height and one column per roof colour. Painted map cells store id + 1 (Tiled's "gid").
+// height and one column per roof colour; the last row holds ground added later (so existing ids never
+// move). Painted map cells store id + 1 (Tiled's "gid").
+const NATURE_ROW = 1 + HEIGHTS.length;
 export const TILE = {
   ROAD: 0, DASH_H: 1, DASH_V: 2, SIDEWALK: 3, GRASS: 4,
   CROSSWALK_H: 5, CROSSWALK_V: 6, PARKING: 7, ARROW: 8, WATER: 9,
+  TREES: COLUMNS * NATURE_ROW,
 };
 export const buildingId = (level, colour) => COLUMNS * (1 + level) + colour;
 
@@ -36,8 +39,9 @@ export const TILES = [
   { id: TILE.WATER, kind: 'water' }, // impassable pond or canal
   ...HEIGHTS.flatMap((height, level) =>
     ROOFS.map((roof, colour) => ({ id: buildingId(level, colour), kind: 'building', height, roof, level }))),
+  { id: TILE.TREES, kind: 'tree' }, // solid woodland canopy
 ];
-export const TILE_COUNT = COLUMNS * (1 + HEIGHTS.length);
+export const TILE_COUNT = COLUMNS * (NATURE_ROW + 1);
 
 /** Tiled "tiles" entries (per-tile custom properties) for the tileset embedded in the map. */
 export function tiledTiles() {

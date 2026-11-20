@@ -108,8 +108,8 @@ export const TRAFFIC = {
 
 export const PED = {
   radius: 7,
-  /** How many pedestrians the city keeps alive. */
-  count: 120,
+  /** How many pedestrians the city keeps alive: about one per ten sidewalk tiles of the map. */
+  count: 300,
   health: 24,
   walkSpeed: 52,
   runSpeed: 150,
