@@ -33,6 +33,10 @@ export const PALETTE: Readonly<Record<string, string>> = {
   F: '#3a3a3a', // shoe light
   u: '#111111', // gun
   U: '#2c2c2c', // gun light
+  // Dead pedestrians: pale skin, dull clothes, no tint
+  z: '#aab8a6', // dead skin
+  Z: '#7f8c7d', // dead skin shade
+  C: '#3f444b', // dead clothes
   // Ground props
   v: '#7a0f12', // blood
   w: '#96161a', // wet blood

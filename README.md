@@ -7,9 +7,10 @@ Current scope is deliberately minimal: walking, entering and leaving cars, arcad
 handbrake drift, car-to-car and wall collisions, fake-3D buildings, and guns. Shot cars smoke,
 catch fire and explode, and the blast can set off nearby cars. Pedestrians (on foot only, there is
 no AI traffic) wander the sidewalks and cross streets; they run from gunfire, explosions and fast
-cars, and can be shot or run over. Some pedestrians are police: crimes (gunfire and kills) raise the
-wanted stars, and officers chase you. At 1-3 stars they try to arrest you; at 4-5 they shoot instead.
-Being busted or shot down costs $100 and sends you back to the start. Killed officers drop SMG ammo.
+cars, and can be shot or run over. You can also lean out of a car window and shoot while driving.
+Some pedestrians are police: crimes (gunfire and kills) raise the wanted stars, and officers chase
+you. At 1-3 stars they try to arrest you; at 4-5 they shoot instead. Being busted or shot down costs
+$100 and sends you back to the start. Killed officers drop SMG ammo.
 
 ## Controls
 
@@ -17,8 +18,8 @@ Being busted or shot down costs $100 and sends you back to the start. Killed off
 |---|---|
 | Arrows / WASD | Drive; on foot, walk (with mouse aim: move in screen directions; without: up/down = forward/back, left/right = turn) |
 | Shift | Sprint while walking forward (on foot) |
-| Mouse | Aim on foot (turn off in the menu to rotate with A / D instead) |
-| Left click / Space | Shoot (on foot); Space is also the handbrake in a car |
+| Mouse | Aim on foot or out of a car window (turn off in the menu to rotate with A / D on foot) |
+| Left click / Space | Shoot. In a car, left click shoots toward the mouse; Space is the handbrake |
 | E / F / Enter | Get into the nearest car, or get out |
 | Q | Switch weapon |
 | Esc | Menu: controls and settings (pauses the game) |
@@ -84,7 +85,7 @@ properties, so existing maps are not touched by `gen:tileset`.
 **Things that are not tiles** live in object layers, since they move or are placed freely:
 
 - **spawns**: a point named `player`, with optional `heading` in degrees (0 = east, 90 = south).
-- **cars**: points with `heading`, an optional `color` and an optional `model` (see below). Cars with no `model` get a random one, the same every time for a given spot.
+- **cars**: points with `heading`, an optional `color` and an optional `model` (see below). Cars with no `model` get a random one, the same every time for a given spot. A `driver` boolean forces someone into (or out of) the driver's seat; without it, most cars get a deterministic seated driver.
 - **pickups**: points with either `weapon` (`smg`) and `ammo`, or `amount` (whole dollars of cash).
   They respawn 30 s after being collected. Cash adds to `sim.cash`, which the HUD shows.
 
@@ -103,6 +104,13 @@ Everything about a model (box size, health, mass, axles and so the wheel count, 
 common it is) is one entry in `src/sim/models.ts`. To add one, add the entry and a `CarModelId`,
 then draw its `body`, `trim` and `wrecked` pixel maps in `src/render/pixelart/cars.ts` at the size of its box
 (twice `halfLength` by twice `halfWidth` in world px, at 2 world px per art pixel; the body is white so it can be tinted).
+
+Most parked cars start with a **driver** in the seat, visible through the windows and carried along
+when the car moves. A car has a `driver: Driver | null`, where `Driver` is a separate occupant type so
+a future car-theft rule can take that person out of the car. Which cars have one is decided
+deterministically per spawn in `src/world/tiled.ts` (or forced with the map's `driver` property); the
+share is tuned by `DRIVER.spawnChance` in `src/sim/tuning.ts`. Each model's `driverSeat` in
+`src/sim/models.ts` lines the sprite up with its cabin glass.
 
 Pedestrians are not placed in the map: the game spawns them on random sidewalk tiles at start and
 replaces the dead ones outside the camera view. Weapons, explosion strength and pedestrian
