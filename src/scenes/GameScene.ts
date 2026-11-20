@@ -121,10 +121,12 @@ export class GameScene extends Phaser.Scene {
 
     for (const e of this.sim.events) {
       this.effects.handle(e);
+      if (e.type === 'pickupDropped') this.pickupViews.push(new PickupView(this, e.pickup));
       if (e.type === 'explosion') {
         const d = Math.hypot(e.x - this.rig.x, e.y - this.rig.y);
         if (d < 900) this.cameras.main.shake(350, 0.012 * (1 - d / 900));
       }
+      if (e.type === 'busted' || e.type === 'playerDown') this.cameras.main.shake(250, 0.008);
     }
     this.sim.events.length = 0;
 

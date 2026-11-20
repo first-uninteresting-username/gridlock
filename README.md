@@ -7,7 +7,9 @@ Current scope is deliberately minimal: walking, entering and leaving cars, arcad
 handbrake drift, car-to-car and wall collisions, fake-3D buildings, and guns. Shot cars smoke,
 catch fire and explode, and the blast can set off nearby cars. Pedestrians (on foot only, there is
 no AI traffic) wander the sidewalks and cross streets; they run from gunfire, explosions and fast
-cars, and can be shot or run over.
+cars, and can be shot or run over. Some pedestrians are police: crimes (gunfire and kills) raise the
+wanted stars, and officers chase you. At 1-3 stars they try to arrest you; at 4-5 they shoot instead.
+Being busted or shot down costs $100 and sends you back to the start. Killed officers drop SMG ammo.
 
 ## Controls
 

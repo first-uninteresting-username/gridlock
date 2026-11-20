@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Pedestrian } from '../sim/pedestrian';
-import { addSprite } from './art';
+import { addSprite, setSprite } from './art';
 
 /** Shirt colours, indexed by `Pedestrian.look`. */
 const SHIRTS = [0xc0392b, 0x2e86de, 0xf1c40f, 0x27ae60, 0xecf0f1, 0x8e44ad, 0xe67e22, 0x7f8c8d];
@@ -14,8 +14,10 @@ export class PedestrianView {
   private readonly footL: Phaser.GameObjects.Image;
   private readonly footR: Phaser.GameObjects.Image;
   private readonly body: Phaser.GameObjects.Image;
+  private readonly head: Phaser.GameObjects.Image;
   private readonly blood: Phaser.GameObjects.Image;
   private look = -1;
+  private police = false;
   private dead = false;
 
   constructor(scene: Phaser.Scene, private readonly ped: Pedestrian) {
@@ -23,14 +25,21 @@ export class PedestrianView {
     this.footL = addSprite(scene, 'player-foot');
     this.footR = addSprite(scene, 'player-foot');
     this.body = addSprite(scene, 'ped-body');
-    const head = addSprite(scene, 'ped-head', 1, 0);
-    this.root = scene.add.container(0, 0, [this.footL, this.footR, this.body, head]).setDepth(DEPTH_ALIVE);
+    this.head = addSprite(scene, 'ped-head', 1, 0);
+    this.root = scene.add.container(0, 0, [this.footL, this.footR, this.body, this.head]).setDepth(DEPTH_ALIVE);
     this.sync();
   }
 
   sync(): void {
     const p = this.ped;
-    if (p.look !== this.look) { this.look = p.look; this.body.setTint(SHIRTS[p.look % SHIRTS.length]); }
+    if (p.police !== this.police) {
+      this.police = p.police;
+      setSprite(this.body, p.police ? 'police-body' : 'ped-body');
+      setSprite(this.head, p.police ? 'police-head' : 'ped-head');
+      if (p.police) this.body.clearTint();
+      else { this.look = -1; this.body.setTint(SHIRTS[p.look % SHIRTS.length]); }
+    }
+    if (!p.police && p.look !== this.look) { this.look = p.look; this.body.setTint(SHIRTS[p.look % SHIRTS.length]); }
     const dead = p.state === 'dead';
     if (dead !== this.dead) {
       this.dead = dead;

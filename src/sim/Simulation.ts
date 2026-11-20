@@ -2,13 +2,14 @@ import { collideCars, separateBodies } from './collide';
 import { carContains, carSpeed, stepCar, type Car } from './car';
 import { createPedestrian, killPedestrian, panic, resetPedestrian, sidewalkSpots, stepPedestrian, type Pedestrian } from './pedestrian';
 import { findCarToEnter, findExitSpot, stepOnFoot, type Player } from './player';
-import { DAMAGE, PED, PICKUP } from './tuning';
+import { DAMAGE, PED, PICKUP, PLAYER, POLICE } from './tuning';
 import type { Input, World } from './types';
 import { createArsenal, WEAPON_ORDER, WEAPONS, type Arsenal, type Bullet, type WeaponId } from './weapons';
 
 /** What a pickup gives you. */
 export type PickupContents =
   | { readonly kind: 'weapon'; readonly weapon: WeaponId; readonly ammo: number }
+  | { readonly kind: 'ammo'; readonly weapon: WeaponId; readonly amount: number }
   | { readonly kind: 'cash'; readonly amount: number };
 
 export type Pickup = PickupContents & {
@@ -25,7 +26,11 @@ export type SimEvent =
   | { type: 'ignite'; car: Car }
   | { type: 'explosion'; x: number; y: number }
   | { type: 'pickup'; x: number; y: number; kind: Pickup['kind'] }
-  | { type: 'pedKilled'; ped: Pedestrian; by: 'bullet' | 'car' | 'explosion' };
+  | { type: 'pedKilled'; ped: Pedestrian; by: 'bullet' | 'car' | 'explosion' }
+  | { type: 'pickupDropped'; pickup: Pickup }
+  | { type: 'playerHit'; x: number; y: number }
+  | { type: 'busted'; x: number; y: number }
+  | { type: 'playerDown'; x: number; y: number };
 
 /** Highest wanted level. */
 export const MAX_WANTED = 5;
@@ -40,7 +45,7 @@ export class Simulation {
    * only appear outside it. Until it is set, they just appear far from the player.
    */
   view: { x: number; y: number; width: number; height: number } | null = null;
-  /** Wanted level, 0..MAX_WANTED. Displayed only; nothing raises it or reacts to it yet. */
+  /** Wanted level, 0..MAX_WANTED. Crimes raise it; police pursue and react to it. */
   wanted = 0;
   /** Money in dollars, a whole number. Earned from cash pickups. */
   cash = 0;
@@ -49,6 +54,8 @@ export class Simulation {
 
   /** Where pedestrians can be placed: the centre of every sidewalk tile. */
   private readonly spots: [number, number][];
+  /** Where a busted or shot-down player returns to. */
+  private readonly spawn: { readonly x: number; readonly y: number; readonly a: number };
 
   constructor(
     readonly world: World,
@@ -59,14 +66,20 @@ export class Simulation {
     private readonly random: () => number = Math.random,
   ) {
     this.spots = sidewalkSpots(world);
+    this.spawn = { x: player.x, y: player.y, a: player.a };
   }
 
   /** Fill the city with `count` pedestrians on random sidewalks, none right next to the player. */
   populate(count: number): void {
     for (let i = 0; i < count; i++) {
       const spot = this.randomSpot(300);
-      if (spot) this.pedestrians.push(createPedestrian(spot[0], spot[1], this.random));
+      if (spot) this.pedestrians.push(createPedestrian(spot[0], spot[1], this.random, this.random() < POLICE.fraction));
     }
+  }
+
+  /** Add wanted stars, clamped to the legal range. Called for player crimes. */
+  raiseWanted(amount: number): void {
+    this.wanted = Math.max(0, Math.min(MAX_WANTED, this.wanted + amount));
   }
 
   /** A random sidewalk spot at least `minDist` from the player, or null if none turned up. */
@@ -135,12 +148,20 @@ export class Simulation {
     if (p.health > 0) return;
     killPedestrian(p, kx, ky);
     this.events.push({ type: 'pedKilled', ped: p, by });
+    this.raiseWanted(p.police ? 2 : 1);
+    if (p.police) {
+      const pickup: Pickup = {
+        x: p.x, y: p.y, kind: 'ammo', weapon: POLICE.ammoWeapon, amount: POLICE.ammoAmount, respawn: 0,
+      };
+      this.pickups.push(pickup);
+      this.events.push({ type: 'pickupDropped', pickup });
+    }
   }
 
   /** Everyone alive within `range` of a point runs away from it. */
   private scarePedestrians(x: number, y: number, range: number): void {
     for (const p of this.pedestrians) {
-      if (p.state !== 'dead' && Math.hypot(p.x - x, p.y - y) < range) panic(p, x, y, this.random);
+      if (p.state !== 'dead' && !p.police && Math.hypot(p.x - x, p.y - y) < range) panic(p, x, y, this.random);
     }
   }
 
@@ -150,7 +171,7 @@ export class Simulation {
         stepPedestrian(p, dt, this.world, this.cars, this.random);
         if (p.deadFor > PED.corpseTime) { // replace the body with a fresh pedestrian, out of sight
           const spot = this.randomSpot(this.view ? 0 : PED.respawnFallbackDistance, true);
-          if (spot) resetPedestrian(p, spot[0], spot[1], this.random);
+          if (spot) resetPedestrian(p, spot[0], spot[1], this.random, p.police);
         }
         continue;
       }
@@ -169,8 +190,61 @@ export class Simulation {
         const nx = -c.vy / speed, ny = c.vx / speed, side = Math.sign(dx * nx + dy * ny) || 1;
         panic(p, p.x - nx * side, p.y - ny * side, this.random);
       }
-      if (!runOver) stepPedestrian(p, dt, this.world, this.cars, this.random);
+      if (runOver) continue;
+      if (p.police) {
+        if (this.wanted > 0) p.state = 'chase';
+        else if (p.state === 'chase') p.state = 'walk';
+      }
+      const target = p.police && this.wanted > 0 ? this.player : null;
+      stepPedestrian(p, dt, this.world, this.cars, this.random, target);
+      if (target) this.policeAct(p, dt);
     }
+  }
+
+  /** An officer's arrest or gunfire decision, after it has moved for this step. */
+  private policeAct(p: Pedestrian, dt: number): void {
+    p.arrestCooldown = Math.max(0, p.arrestCooldown - dt);
+    p.shootCooldown = Math.max(0, p.shootCooldown - dt);
+    const dx = this.player.x - p.x, dy = this.player.y - p.y;
+    const dist = Math.hypot(dx, dy);
+    if (this.wanted >= POLICE.shootWanted) {
+      if (p.shootCooldown > 0 || dist >= POLICE.shootRange) return;
+      if (!this.lineOfSight(p.x, p.y, this.player.x, this.player.y)) return;
+      p.shootCooldown = POLICE.shootInterval;
+      const a = Math.atan2(dy, dx) + (this.random() * 2 - 1) * POLICE.spread;
+      const x = p.x + Math.cos(a) * 12, y = p.y + Math.sin(a) * 12;
+      this.bullets.push({
+        x, y, vx: Math.cos(a) * POLICE.bulletSpeed, vy: Math.sin(a) * POLICE.bulletSpeed,
+        travelled: 0, range: POLICE.shootRange, damage: POLICE.damage, from: 'police',
+      });
+      this.events.push({ type: 'shot', x, y, a, weapon: 'pistol' });
+    } else if (p.arrestCooldown === 0 && dist < POLICE.arrestRange) {
+      p.arrestCooldown = POLICE.arrestCooldown;
+      this.bookPlayer('busted');
+    }
+  }
+
+  /** True when no solid tile blocks the straight line between two points. */
+  private lineOfSight(x0: number, y0: number, x1: number, y1: number): boolean {
+    const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 8));
+    for (let i = 1; i < n; i++) {
+      const t = i / n;
+      if (this.world.solidAt(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t)) return false;
+    }
+    return true;
+  }
+
+  /** Busted or shot down: a fine, a clean record and a trip back to the starting spot. */
+  private bookPlayer(type: 'busted' | 'playerDown'): void {
+    const p = this.player;
+    this.cash = Math.max(0, this.cash - POLICE.fine);
+    this.wanted = 0;
+    if (p.car) this.leaveCar(true);
+    p.x = this.spawn.x;
+    p.y = this.spawn.y;
+    p.a = this.spawn.a;
+    p.health = PLAYER.health;
+    this.events.push({ type, x: p.x, y: p.y });
   }
 
   /** Keep living bodies from overlapping: pedestrians avoid each other and the player on foot. */
@@ -244,8 +318,12 @@ export class Simulation {
     // Muzzle: in front of the player, on the right hand.
     const x = p.x + fx * 14 - fy * 4, y = p.y + fy * 14 + fx * 4;
     const a = p.a + (this.random() * 2 - 1) * w.spread;
-    this.bullets.push({ x, y, vx: Math.cos(a) * w.bulletSpeed, vy: Math.sin(a) * w.bulletSpeed, travelled: 0, range: w.range, damage: w.damage });
+    this.bullets.push({
+      x, y, vx: Math.cos(a) * w.bulletSpeed, vy: Math.sin(a) * w.bulletSpeed,
+      travelled: 0, range: w.range, damage: w.damage, from: 'player',
+    });
     this.events.push({ type: 'shot', x, y, a, weapon: w.id });
+    if (this.wanted === 0) this.raiseWanted(1); // gunfire alone is enough to get the police's attention
     this.scarePedestrians(p.x, p.y, PED.gunScareRange);
     if (ars.ammo[w.id] === 0) { delete ars.ammo[w.id]; this.cycleWeapon(); }
   }
@@ -264,13 +342,24 @@ export class Simulation {
           hit = true;
           break;
         }
-        for (const o of this.pedestrians) {
-          if (o.state === 'dead' || Math.hypot(o.x - b.x, o.y - b.y) > o.r) continue;
-          this.events.push({ type: 'impact', x: b.x, y: b.y, on: 'ped' });
-          this.damagePedestrian(o, b.damage, 'bullet', (b.vx / speed) * 40, (b.vy / speed) * 40);
-          panic(o, b.x - b.vx, b.y - b.vy, this.random); // run along the line of fire, away from the shooter
-          hit = true;
-          break;
+        if (b.from === 'police') {
+          const p = this.player;
+          if (!p.car && Math.hypot(p.x - b.x, p.y - b.y) <= p.r) {
+            p.health -= b.damage;
+            this.events.push({ type: 'playerHit', x: b.x, y: b.y });
+            if (p.health <= 0) this.bookPlayer('playerDown');
+            hit = true;
+            break;
+          }
+        } else {
+          for (const o of this.pedestrians) {
+            if (o.state === 'dead' || Math.hypot(o.x - b.x, o.y - b.y) > o.r) continue;
+            this.events.push({ type: 'impact', x: b.x, y: b.y, on: 'ped' });
+            this.damagePedestrian(o, b.damage, 'bullet', (b.vx / speed) * 40, (b.vy / speed) * 40);
+            panic(o, b.x - b.vx, b.y - b.vy, this.random); // run along the line of fire, away from the shooter
+            hit = true;
+            break;
+          }
         }
         if (hit) break;
         for (const c of this.cars) {
@@ -294,6 +383,7 @@ export class Simulation {
       if (k.respawn > 0) { k.respawn = Math.max(0, k.respawn - dt); continue; }
       if (Math.hypot(p.x - k.x, p.y - k.y) > PICKUP.radius) continue;
       if (k.kind === 'weapon') this.giveWeapon(k.weapon, k.ammo);
+      else if (k.kind === 'ammo') this.giveWeapon(k.weapon, k.amount);
       else this.cash += k.amount;
       k.respawn = PICKUP.respawn;
       this.events.push({ type: 'pickup', x: k.x, y: k.y, kind: k.kind });

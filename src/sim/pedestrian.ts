@@ -1,11 +1,11 @@
 import { carContains, carSpeed, toCarLocal, type Car } from './car';
 import { bodyHitsWorld, pushOutOfCars } from './player';
-import { PED } from './tuning';
+import { PED, POLICE } from './tuning';
 import type { World } from './types';
 
-export type PedState = 'walk' | 'flee' | 'dead';
+export type PedState = 'walk' | 'flee' | 'chase' | 'dead';
 
-/** A bystander. Wanders the streets tile by tile, bolts when scared, and can be shot or run over. */
+/** A bystander or police officer. Wanders the streets tile by tile, bolts when scared, and can be shot or run over. */
 export interface Pedestrian {
   x: number;
   y: number;
@@ -38,6 +38,11 @@ export interface Pedestrian {
   look: number;
   /** Personal walking-speed multiplier. */
   pace: number;
+  /** Police chase the player while wanted and arrest or shoot instead of fleeing. */
+  police: boolean;
+  /** Seconds until this officer can arrest or shoot again. */
+  arrestCooldown: number;
+  shootCooldown: number;
 }
 
 export const PED_LOOKS = 8;
@@ -46,18 +51,20 @@ const DIRS: readonly (readonly [number, number])[] = [[1, 0], [0, 1], [-1, 0], [
 
 const walkable = (k: string | null): boolean => k !== null && k !== 'building';
 
-export function createPedestrian(x: number, y: number, random: () => number): Pedestrian {
+export function createPedestrian(x: number, y: number, random: () => number, police = false): Pedestrian {
   const p = { r: PED.radius } as Pedestrian;
-  resetPedestrian(p, x, y, random);
+  resetPedestrian(p, x, y, random, police);
   return p;
 }
 
 /** Puts a pedestrian (new or recycled) back on its feet at a spot, ready to walk. */
-export function resetPedestrian(p: Pedestrian, x: number, y: number, random: () => number): void {
+export function resetPedestrian(p: Pedestrian, x: number, y: number, random: () => number, police = false): void {
   Object.assign(p, {
-    x, y, a: random() * Math.PI * 2, state: 'walk', health: PED.health, stride: random() * 6,
+    x, y, a: random() * Math.PI * 2, state: 'walk', health: police ? POLICE.health : PED.health,
+    stride: random() * 6,
     tx: x, ty: y, dx: 0, dy: 0, fear: 0, fleeA: 0, stuck: 0, wait: 0, vx: 0, vy: 0, deadFor: 0,
     look: Math.floor(random() * PED_LOOKS), pace: 0.8 + random() * 0.4,
+    police, arrestCooldown: 0, shootCooldown: 0,
   });
 }
 
@@ -124,9 +131,17 @@ function crossingBlocked(x: number, y: number, cars: readonly Car[]): boolean {
  * Picks the next tile to walk to. Sidewalks are preferred and a pedestrian tends to keep going the
  * way it was heading; now and then it steps off the kerb to cross a street, and once on the road it
  * keeps straight on until it reaches the other side. A pedestrian will not walk into a car, and it
- * waits at the kerb if traffic is coming. `turnBack` forces a U-turn (when blocked).
+ * waits at the kerb if traffic is coming. `turnBack` forces a U-turn (when blocked). When `target`
+ * is set (a pursuing officer), it steers towards the nearest tile and skips kerb waits.
  */
-function chooseNext(p: Pedestrian, world: World, cars: readonly Car[], random: () => number, turnBack: boolean): void {
+function chooseNext(
+  p: Pedestrian,
+  world: World,
+  cars: readonly Car[],
+  random: () => number,
+  turnBack: boolean,
+  target: { readonly x: number; readonly y: number } | null = null,
+): void {
   const ts = world.tileSize;
   const col = Math.floor(p.x / ts), row = Math.floor(p.y / ts);
   const here = world.kindAt(p.x, p.y);
@@ -140,10 +155,15 @@ function chooseNext(p: Pedestrian, world: World, cars: readonly Car[], random: (
     if (cars.some((c) => carContains(c, nx, ny, p.r))) continue; // never step into a car's body
     const straight = dx === p.dx && dy === p.dy, back = dx === -p.dx && dy === -p.dy;
     let w = kind === 'sidewalk' ? 1 : kind === 'grass' ? 0.6 : 0.4;
-    if (straight) w *= onRoad ? 8 : kind === 'sidewalk' ? 4 : 1;
-    if (back) w *= 0.02;
-    if (turnBack) w = back ? 1 : 0;
-    const unsafe = !turnBack && onSidewalk && kind === 'road' && crossingBlocked(nx, ny, cars);
+    if (target && !turnBack) {
+      // Pursuit is greedy: a weighted stroll can randomly wander away from a stationary player.
+      w = 1 / (0.25 + Math.hypot(nx - target.x, ny - target.y) / ts) ** 3;
+    } else {
+      if (straight) w *= onRoad ? 8 : kind === 'sidewalk' ? 4 : 1;
+      if (back) w *= 0.02;
+      if (turnBack) w = back ? 1 : 0;
+    }
+    const unsafe = !turnBack && !target && onSidewalk && kind === 'road' && crossingBlocked(nx, ny, cars);
     if (w <= 0) continue;
     options.push({ dx, dy, w, unsafe });
     total += w;
@@ -176,7 +196,14 @@ function turnToward(p: Pedestrian, a: number, dt: number): void {
 }
 
 /** Advances one pedestrian. Cars shove it aside; deciding what hurts or scares it is the simulation's job. */
-export function stepPedestrian(p: Pedestrian, dt: number, world: World, cars: readonly Car[], random: () => number): void {
+export function stepPedestrian(
+  p: Pedestrian,
+  dt: number,
+  world: World,
+  cars: readonly Car[],
+  random: () => number,
+  target: { readonly x: number; readonly y: number } | null = null,
+): void {
   if (p.state === 'dead') {
     p.deadFor += dt;
     move(p, p.vx * dt, p.vy * dt, world);
@@ -203,18 +230,25 @@ export function stepPedestrian(p: Pedestrian, dt: number, world: World, cars: re
       p.stride += dt * 20;
     }
   }
-  if (p.state === 'walk') {
-    if (p.wait > 0) {
+  if (p.state === 'walk' || p.state === 'chase') {
+    const chasing = p.state === 'chase';
+    const nearTarget = chasing && target !== null && Math.hypot(target.x - p.x, target.y - p.y) < PED.pursuitDirectRange;
+    if (!nearTarget && p.wait > 0) {
       p.wait -= dt; // waiting at the kerb for traffic to clear
     } else {
-      const ddx = p.tx - p.x, ddy = p.ty - p.y, d = Math.hypot(ddx, ddy);
-      want = Math.min(PED.walkSpeed * p.pace * dt, d);
+      // Tile-by-tile walking gets an officer to the right street; up close, head straight for the
+      // player so an arrest actually lands instead of orbiting the target tile centre.
+      let ddx = p.tx - p.x, ddy = p.ty - p.y;
+      if (nearTarget && target) { ddx = target.x - p.x; ddy = target.y - p.y; }
+      const d = Math.hypot(ddx, ddy);
+      const speed = chasing ? PED.pursuitSpeed : PED.walkSpeed * p.pace;
+      want = Math.min(speed * dt, d);
       if (d > 1e-6) {
         move(p, (ddx / d) * want, (ddy / d) * want, world);
         turnToward(p, Math.atan2(ddy, ddx), dt);
-        p.stride += dt * 9 * p.pace;
+        p.stride += dt * (chasing ? 14 : 9 * p.pace);
       }
-      if (d - want < 0.5) chooseNext(p, world, cars, random, false); // arrived
+      if (!nearTarget && d - want < 0.5) chooseNext(p, world, cars, random, false, chasing ? target : null); // arrived
     }
   }
 
@@ -225,7 +259,7 @@ export function stepPedestrian(p: Pedestrian, dt: number, world: World, cars: re
     p.stuck += dt;
     if (p.stuck > 0.5) {
       p.stuck = 0;
-      if (p.state === 'walk') chooseNext(p, world, cars, random, true);
+      if (p.state === 'walk' || p.state === 'chase') chooseNext(p, world, cars, random, true, p.state === 'chase' ? target : null);
       else p.fleeA += Math.PI / 2 + random() * Math.PI / 2;
     }
   } else p.stuck = 0;

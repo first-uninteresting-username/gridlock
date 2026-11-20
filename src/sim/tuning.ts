@@ -14,6 +14,8 @@ export const CAR = {
 
 export const PLAYER = {
   radius: 9,
+  /** Health lost to police gunfire; reaching zero gets the player booked like a bust. */
+  health: 100,
   walkSpeed: 160,
   /** Forward speed while sprinting (Shift held). */
   sprintSpeed: 280,
@@ -51,6 +53,10 @@ export const PED = {
   health: 24,
   walkSpeed: 52,
   runSpeed: 150,
+  /** Police pursuit speed: quick enough to catch a walker, not a sprinter. */
+  pursuitSpeed: 175,
+  /** Inside this range an officer beelines for the player instead of walking tile to tile. */
+  pursuitDirectRange: 96,
   /** Seconds a pedestrian stays panicked after a scare. */
   fearTime: 3,
   /** A car faster than this scares pedestrians within `carScareRange` of its body. */
@@ -73,4 +79,30 @@ export const PED = {
   respawnFallbackDistance: 1200,
   /** Fraction of a car's velocity a run-over body is flung with. */
   knockback: 0.7,
+} as const;
+
+/** Police are pedestrians who pursue the player once the wanted level is up. */
+export const POLICE = {
+  /** Fraction of the pedestrian population that is police. */
+  fraction: 0.15,
+  health: 60,
+  /** At this wanted level and above, officers shoot instead of trying to arrest. */
+  shootWanted: 4,
+  /** Close enough to make an arrest. */
+  arrestRange: 20,
+  /** Minimum seconds between one officer's arrest attempts. */
+  arrestCooldown: 2.5,
+  /** Furthest an officer can shoot the player. */
+  shootRange: 340,
+  /** Minimum seconds between officer shots. */
+  shootInterval: 1.1,
+  /** Spread and reach of officer gunfire. */
+  spread: 0.12,
+  bulletSpeed: 900,
+  damage: 8,
+  /** Cash lost when busted or shot down, and when an officer is killed. */
+  fine: 100,
+  /** Killed officers leave a box of SMG rounds. */
+  ammoWeapon: 'smg',
+  ammoAmount: 24,
 } as const;
