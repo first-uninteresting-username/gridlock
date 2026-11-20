@@ -13,7 +13,7 @@ import { CAR, KMH_PER_PX } from '../sim/tuning';
 import type { Input } from '../sim/types';
 import { Hud } from '../ui/Hud';
 import { Menu } from '../ui/Menu';
-import { buildCityData, type TiledObject } from '../world/tiled';
+import { buildCityData, type TiledMap } from '../world/tiled';
 
 const STEP = 1 / 120; // fixed simulation step
 const MAX_FRAME = 0.1; // ignore longer gaps (tab switch) instead of fast-forwarding
@@ -41,18 +41,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Phaser draws the tile layer; the game's own reading of the same map (kinds, buildings,
+    // spawns) comes from the raw Tiled JSON, so Phaser never needs to know what a tile means.
     const map = this.make.tilemap({ key: 'city' });
     const tiles = map.addTilesetImage('city', 'city-tiles');
     if (!tiles) throw new Error('Tileset "city" missing from map');
-    map.createLayer('ground', tiles, 0, 0)?.setDepth(0);
-
-    const objects = (name: string) => (map.getObjectLayer(name)?.objects ?? []) as TiledObject[];
-    const data = buildCityData(map.widthInPixels, map.heightInPixels, {
-      buildings: objects('buildings'),
-      spawns: objects('spawns'),
-      cars: objects('cars'),
-      pickups: objects('pickups'),
-    });
+    map.createLayer('tiles', tiles, 0, 0)?.setDepth(0);
+    const data = buildCityData(this.cache.tilemap.get('city').data as TiledMap);
 
     const cars = data.cars.map((s) => createCar(s.x, s.y, s.a, s.color ?? 0xffffff));
     const pickups: Pickup[] = data.pickups.map((k) => ({ ...k, respawn: 0 }));
@@ -63,7 +58,7 @@ export class GameScene extends Phaser.Scene {
     // Dev builds only: lets the console and browser tests inspect and script the game.
     if (import.meta.env.DEV) Object.assign(window, { gridlock: { sim: this.sim, scene: this } });
     this.playerView = new PlayerView(this, this.sim.player);
-    this.buildings = new BuildingLayer(this, data.city.buildings);
+    this.buildings = new BuildingLayer(this, data.city);
 
     const cam = this.cameras.main;
     cam.setBackgroundColor('#0d0f12');
