@@ -24,6 +24,9 @@ export type SimEvent =
   | { type: 'pickup'; x: number; y: number; weapon: WeaponId }
   | { type: 'pedKilled'; ped: Pedestrian; by: 'bullet' | 'car' | 'explosion' };
 
+/** Highest wanted level. */
+export const MAX_WANTED = 5;
+
 /** All gameplay state and rules. Knows nothing about rendering or input devices. */
 export class Simulation {
   readonly bullets: Bullet[] = [];
@@ -34,6 +37,8 @@ export class Simulation {
    * only appear outside it. Until it is set, they just appear far from the player.
    */
   view: { x: number; y: number; width: number; height: number } | null = null;
+  /** Wanted level, 0..MAX_WANTED. Displayed only; nothing raises it or reacts to it yet. */
+  wanted = 0;
   /** Filled during step(); the consumer clears it after reading. */
   readonly events: SimEvent[] = [];
 

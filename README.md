@@ -39,7 +39,7 @@ In dev builds, `window.gridlock.sim` exposes the simulation in the browser conso
 
 ```
 src/
-  sim/        Gameplay rules: car handling, collisions, player, pedestrians. No Phaser imports.
+  sim/        Gameplay rules: car models and handling, collisions, player, pedestrians. No Phaser imports.
   world/      The tile grid (City) and the Tiled map loader.
   render/     Phaser views: cars, player, pedestrians, leaning buildings, follow camera. art.ts loads the SVG sprites.
   scenes/     Phaser scenes: Boot (asset loading) and Game (fixed 120 Hz sim + rendering).
@@ -48,7 +48,7 @@ src/
 public/
   maps/city.tmj   The city, editable in Tiled.
   tiles/city.svg  The tileset image.
-  art/            SVG sprites: cars, player, pedestrians, weapons, pickup. Registered in src/render/art.ts.
+  art/            SVG sprites: cars (per model), wheel, player, pedestrians, weapons, pickup. Registered in src/render/art.ts.
 tools/
   tiles.mjs       The tile catalogue (what each tile is).
   gen-tileset.mjs Draws tiles/city.svg from the catalogue. Never touches the map.
@@ -82,11 +82,27 @@ properties, so existing maps are not touched by `gen:tileset`.
 **Things that are not tiles** live in object layers, since they move or are placed freely:
 
 - **spawns**: a point named `player`, with optional `heading` in degrees (0 = east, 90 = south).
-- **cars**: points with `heading` and an optional `color`.
+- **cars**: points with `heading`, an optional `color` and an optional `model` (see below). Cars with no `model` get a random one, the same every time for a given spot.
 - **pickups**: points with `weapon` (`smg`) and `ammo`. They respawn 30 s after being collected.
 
+## Car models
+
+| `model` | Wheels | Health | Character |
+|---|---|---|---|
+| `sedan` | 4 | 100 | The baseline. |
+| `compact` | 4 | 70 | Small and light: grippy, turns sharply, lower top speed. |
+| `sports` | 4 | 80 | Fastest by far, but the tail steps out easily. |
+| `van` | 4 | 150 | Tough, slow to accelerate and to turn. |
+| `lorry` | 6 | 260 | Huge and heavy: slow, swings wide, shoves other cars aside. |
+| `trike` | 3 | 40 | Tiny, twitchy and flimsy. |
+
+Everything about a model (box size, health, mass, axles and so the wheel count, handling, how
+common it is) is one entry in `src/sim/models.ts`. To add one, add the entry and a `CarModelId`,
+then draw `public/art/car-<id>-body.svg`, `-trim.svg` and `-wrecked.svg` at the size of its box
+(twice `halfLength` by twice `halfWidth`; the body is white so it can be tinted).
+
 Pedestrians are not placed in the map: the game spawns them on random sidewalk tiles at start and
-replaces the dead ones outside the camera view. Weapons, car health, explosion strength and pedestrian
+replaces the dead ones outside the camera view. Weapons, explosion strength and pedestrian
 behaviour (count, speeds, scare ranges) are tuned in `src/sim/weapons.ts` and `src/sim/tuning.ts`.
 
 ## Story

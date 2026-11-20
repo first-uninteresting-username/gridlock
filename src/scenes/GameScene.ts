@@ -8,8 +8,9 @@ import { PickupView } from '../render/PickupView';
 import { PlayerView } from '../render/PlayerView';
 import { carSpeed, createCar } from '../sim/car';
 import { createPlayer } from '../sim/player';
-import { Simulation, type Pickup } from '../sim/Simulation';
+import { MAX_WANTED, Simulation, type Pickup } from '../sim/Simulation';
 import { WEAPONS } from '../sim/weapons';
+import { CAR_MODELS } from '../sim/models';
 import { CAR, KMH_PER_PX, PED } from '../sim/tuning';
 import type { Input } from '../sim/types';
 import { Hud } from '../ui/Hud';
@@ -51,7 +52,7 @@ export class GameScene extends Phaser.Scene {
     map.createLayer('tiles', tiles, 0, 0)?.setDepth(0);
     const data = buildCityData(this.cache.tilemap.get('city').data as TiledMap);
 
-    const cars = data.cars.map((s) => createCar(s.x, s.y, s.a, s.color ?? 0xffffff));
+    const cars = data.cars.map((s) => createCar(s.x, s.y, s.a, s.color ?? 0xffffff, CAR_MODELS[s.model ?? 'sedan']));
     const pickups: Pickup[] = data.pickups.map((k) => ({ ...k, respawn: 0 }));
     this.sim = new Simulation(data.city, createPlayer(data.player.x, data.player.y, data.player.a), cars, pickups);
     this.sim.populate(PED.count);
@@ -126,7 +127,7 @@ export class GameScene extends Phaser.Scene {
     this.sim.events.length = 0;
 
     const p = this.sim.player, car = p.car;
-    this.rig.update(frame, p.x, p.y, car?.vx ?? 0, car?.vy ?? 0, car ? Math.min(carSpeed(car) / CAR.maxSpeed, 1) : 0);
+    this.rig.update(frame, p.x, p.y, car?.vx ?? 0, car?.vy ?? 0, car ? Math.min(carSpeed(car) / CAR.cameraRefSpeed, 1) : 0);
     for (const v of this.carViews) v.sync();
     for (const v of this.pedViews) v.sync();
     for (const v of this.pickupViews) v.sync(time / 1000);
@@ -135,8 +136,9 @@ export class GameScene extends Phaser.Scene {
     this.sim.view = this.cameras.main.worldView; // replacement pedestrians appear outside this
     this.buildings.draw(this.rig.x, this.rig.y, this.cameras.main.worldView);
     const ars = this.sim.arsenal, ammo = ars.ammo[ars.current] ?? 0;
+    this.hud.setWanted(this.sim.wanted, MAX_WANTED);
     this.hud.setStatus(car
-      ? `Driving · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
+      ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
       : `On foot · ${WEAPONS[ars.current].name} ${ammo === Infinity ? '∞' : ammo}`);
   }
 }

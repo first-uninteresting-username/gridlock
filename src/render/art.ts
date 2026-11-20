@@ -1,11 +1,10 @@
 import type Phaser from 'phaser';
+import { CAR_MODELS, CAR_MODEL_IDS, type CarModelId } from '../sim/models';
 
 /** Every sprite is an SVG in public/art/, rasterised once at load. Sizes are in world pixels. */
-const SPRITES = {
-  'car-body': [48, 26],
-  'car-trim': [48, 26],
-  'car-wrecked': [48, 26],
+const FIXED_SPRITES = {
   'car-shadow': [48, 26],
+  'car-wheel': [10, 5],
   'player-foot': [6, 4],
   'player-body': [12, 20],
   'player-head': [10, 10],
@@ -17,7 +16,18 @@ const SPRITES = {
   pickup: [40, 40],
 } as const satisfies Record<string, readonly [number, number]>;
 
-export type SpriteKey = keyof typeof SPRITES;
+/** Each car model has its own body (tinted to the car's colour), trim and wreck, drawn at the size of its box. */
+export type CarSpriteKey = `car-${CarModelId}-${'body' | 'trim' | 'wrecked'}`;
+
+export type SpriteKey = keyof typeof FIXED_SPRITES | CarSpriteKey;
+
+const SPRITES = { ...FIXED_SPRITES } as Record<SpriteKey, readonly [number, number]>;
+for (const id of CAR_MODEL_IDS) {
+  const m = CAR_MODELS[id];
+  for (const part of ['body', 'trim', 'wrecked'] as const) SPRITES[`car-${id}-${part}`] = [m.halfLength * 2, m.halfWidth * 2];
+}
+
+export const carSprite = (id: CarModelId, part: 'body' | 'trim' | 'wrecked'): CarSpriteKey => `car-${id}-${part}`;
 
 /** Textures are rasterised at this multiple of their world size so they stay sharp when the camera zooms in. */
 const RASTER_SCALE = 4;
