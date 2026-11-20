@@ -13,6 +13,8 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     paintArt(this.textures);
+    // Start the UI scene first so GameScene can pick up its Hud and Menu during create().
+    this.scene.launch('hud');
     this.scene.start('game');
   }
 }
