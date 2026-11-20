@@ -22,10 +22,15 @@ export type SimEvent =
   | { type: 'explosion'; x: number; y: number }
   | { type: 'pickup'; x: number; y: number; weapon: WeaponId };
 
+/** Highest wanted level. */
+export const MAX_WANTED = 5;
+
 /** All gameplay state and rules. Knows nothing about rendering or input devices. */
 export class Simulation {
   readonly bullets: Bullet[] = [];
   readonly arsenal: Arsenal = createArsenal();
+  /** Wanted level, 0..MAX_WANTED. Displayed only; nothing raises it or reacts to it yet. */
+  wanted = 0;
   /** Filled during step(); the consumer clears it after reading. */
   readonly events: SimEvent[] = [];
 

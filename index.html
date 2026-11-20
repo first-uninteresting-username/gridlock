@@ -9,6 +9,7 @@
     html, body { margin: 0; height: 100%; background: #0d0f12; overflow: hidden; }
     #game canvas { display: block; }
     #hud { position: fixed; left: 12px; top: 10px; color: #fff; font: 600 15px/1.4 system-ui, sans-serif; text-shadow: 0 1px 3px #000; pointer-events: none; }
+    #wanted { position: fixed; left: 12px; top: 36px; color: #ffd23f; font: 600 20px/1.2 system-ui, sans-serif; letter-spacing: 0.1em; text-shadow: 0 1px 3px #000; pointer-events: none; }
     button { font: 600 14px system-ui, sans-serif; color: #fff; background: #2a3039; border: 1px solid #4a5360; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
     button:hover { background: #38414d; }
     #menu-btn { position: fixed; right: 12px; top: 10px; opacity: 0.85; }
@@ -28,6 +29,7 @@
 <body>
   <div id="game"></div>
   <div id="hud"></div>
+  <div id="wanted" title="Wanted level"></div>
   <button id="menu-btn" type="button">Menu (Esc)</button>
   <div id="menu">
     <div class="panel">
