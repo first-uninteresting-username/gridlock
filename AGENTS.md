@@ -4,8 +4,13 @@
 
 - Work on a branch in a separate checkout (`git worktree add ../wt-gridlock-<topic> -b <topic>`),
   never directly on `main`, and land changes through GitHub pull requests.
+- When a merge has a non-trivial conflict, stop and ask what to do rather than deciding alone. This
+  includes "soft" conflicts git cannot detect: the same feature implemented on both sides, or code
+  that no longer works with something added after the branch was cut.
 - Do not create tests: no test files, test directories, or test frameworks/dependencies (the project
   has none). Verify changes with `npm run check` and by running the game instead.
+- Each agent drives the game with its own Playwright browser instance (see `gridlock-verify`); never
+  reuse or interfere with another agent's Playwright, since sessions run in parallel.
 - Do not add `Co-Authored-By` trailers (or any other AI attribution) to commit messages or PRs.
 - Skills for this routine live in `.agents/skills/` (`.claude/skills` links to it): `gridlock-workflow`
   (start a branch, ship a PR), `gridlock-verify` (check and run the game), `gridlock-merge` (only when

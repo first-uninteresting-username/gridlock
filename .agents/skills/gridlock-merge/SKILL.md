@@ -36,7 +36,10 @@ git log --oneline HEAD..origin/main          # run in the PR's worktree
   `nix develop -c npm run gen:tileset` instead of hand-editing.
 - After resolving, run `nix develop -c npm run check`, and look at the game with `gridlock-verify` if
   the merge touched code. Remove the `node_modules` symlink, commit the merge, push.
-- If the conflict needs a design decision, stop and ask.
+- If a conflict is non-trivial, stop and ask what to do rather than resolving it yourself. That
+  covers real conflicts that are not a clear keep-both case, and "soft" conflicts git cannot see:
+  the same feature implemented on both sides, or code that no longer works with something added
+  after the branch was cut. Those need a decision you should not make on the user's behalf.
 
 ## 3. Wait for GitHub
 
