@@ -252,7 +252,7 @@ export class Menu {
     y += Math.max(CHECK, aimLines.length * LINE_H + 3) + 7;
 
     const rw = RESUME.length * FONT_ADVANCE + 12;
-    this.resumeX = pw - PAD - rw;
+    this.resumeX = Math.round((pw - rw) / 2);
     this.resumeY = y;
     this.resumeText.move(this.resumeX + 6, y + 4);
     y += BTN_H + PAD;
@@ -265,7 +265,7 @@ export class Menu {
     this.checkRect.setTo(px + PAD, py + this.checkY, CHECK, CHECK);
 
     const mw = MENU_LABEL.length * FONT_ADVANCE + 12;
-    this.menuRect.setTo(this.width - 8 - mw, 8, mw, BTN_H);
+    this.menuRect.setTo(Math.round((this.width - mw) / 2), 8, mw, BTN_H);
     this.menuText.move(this.menuRect.x + 6, this.menuRect.y + 4);
     this.redraw();
   }
