@@ -9,12 +9,14 @@ catch fire and explode, and the blast can set off nearby cars.
 
 ## Controls
 
-| Key | Action |
+| Input | Action |
 |---|---|
-| Arrows / WASD | Walk or drive (up/down = forward/back, left/right = turn) |
+| Arrows / WASD | Drive; on foot, walk (with mouse aim: move in screen directions; without: up/down = forward/back, left/right = turn) |
+| Mouse | Aim on foot (turn off in the menu to rotate with A / D instead) |
+| Left click / Space | Shoot (on foot); Space is also the handbrake in a car |
 | E / F / Enter | Get into the nearest car, or get out |
-| Space | Shoot (on foot) / handbrake (driving) |
 | Q | Switch weapon |
+| Esc | Menu: controls and settings (pauses the game) |
 
 ## Development
 

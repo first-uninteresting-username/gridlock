@@ -24,12 +24,26 @@ function overlapsCar(cars: readonly Car[], x: number, y: number, pad: number): b
   return cars.some((c) => carContains(c, x, y, pad));
 }
 
-/** Rotate-and-walk ("tank") controls. Cars push the player out of the way. */
+/**
+ * On-foot movement. With `input.aim` set the player faces that angle and walks in a world-space
+ * direction (twin-stick); otherwise it is rotate-and-walk ("tank"). Cars push the player out of the way.
+ */
 export function stepOnFoot(p: Player, dt: number, input: Input, world: SolidQuery, cars: readonly Car[]): void {
-  p.a += input.steer * PLAYER.turnRate * dt;
-  const speed = input.throttle > 0 ? PLAYER.walkSpeed : input.throttle < 0 ? -PLAYER.backSpeed : 0;
-  if (speed) p.stride += dt * 12;
-  const nx = p.x + Math.cos(p.a) * speed * dt, ny = p.y + Math.sin(p.a) * speed * dt;
+  let vx: number, vy: number;
+  if (input.aim !== null) {
+    p.a = input.aim;
+    const len = Math.hypot(input.moveX, input.moveY);
+    const k = len > 0 ? PLAYER.walkSpeed / Math.max(len, 1) : 0;
+    vx = input.moveX * k;
+    vy = input.moveY * k;
+  } else {
+    p.a += input.steer * PLAYER.turnRate * dt;
+    const speed = input.throttle > 0 ? PLAYER.walkSpeed : input.throttle < 0 ? -PLAYER.backSpeed : 0;
+    vx = Math.cos(p.a) * speed;
+    vy = Math.sin(p.a) * speed;
+  }
+  if (vx || vy) p.stride += dt * 12;
+  const nx = p.x + vx * dt, ny = p.y + vy * dt;
   if (!bodyHitsWorld(world, nx, p.y, p.r)) p.x = nx;
   if (!bodyHitsWorld(world, p.x, ny, p.r)) p.y = ny;
 
