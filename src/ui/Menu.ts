@@ -38,8 +38,10 @@ const CONTROLS: Control[] = [
   { keys: ['Mouse'], description: 'Aim (on foot, or out of a car window)' },
   { keys: ['Left click', 'Space'], description: 'Shoot. Space also handbrakes in a car, so use left click to shoot while driving.' },
   { keys: ['E', 'Enter'], description: 'Get in or out of a car' },
-  { keys: ['F'], description: 'General action: rob someone in reach, or get in/out of the nearest car' },
-  { keys: ['Q'], description: 'Switch weapon' },
+  { keys: ['F'], description: 'General action: rob someone in reach (not police), or get in/out of the nearest car' },
+  { keys: ['Wheel', '1-4'], description: 'Cycle weapon slots, or select one directly' },
+  { keys: ['Ctrl', 'Wheel', '1', '2'], description: 'Select a gadget slot (gadgets have no behaviour yet)' },
+  { keys: ['Right click'], description: 'Use the selected gadget (not implemented yet)' },
   { keys: ['Esc'], description: 'Open or close this menu' },
 ];
 

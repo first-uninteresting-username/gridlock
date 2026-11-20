@@ -2,10 +2,10 @@ import { collideCars, separateBodies } from './collide';
 import { carContains, carSpeed, stepCar, type Car } from './car';
 import { createPedestrian, killPedestrian, panic, resetPedestrian, sidewalkSpots, stepPedestrian, type Pedestrian } from './pedestrian';
 import { findCarToEnter, findExitSpot, stepOnFoot, type Player } from './player';
-import { DAMAGE, MUZZLE, PED, PICKUP, PLAYER, POLICE, ROB } from './tuning';
+import { DAMAGE, MELEE, MUZZLE, PED, PICKUP, PLAYER, POLICE, ROB } from './tuning';
 import { Traffic } from './traffic';
 import { NO_INPUT, type Input, type World } from './types';
-import { createArsenal, WEAPON_ORDER, WEAPONS, type Arsenal, type Bullet, type WeaponId } from './weapons';
+import { createArsenal, slotWeapon, WEAPONS, WEAPON_ORDER, type Arsenal, type Bullet, type MeleeDef, type WeaponId } from './weapons';
 
 /** What a pickup gives you. */
 export type PickupContents =
@@ -25,11 +25,12 @@ export type Pickup = PickupContents & {
 /** Things that happened during a step, for the renderer to turn into effects and sounds. */
 export type SimEvent =
   | { type: 'shot'; x: number; y: number; a: number; weapon: WeaponId }
+  | { type: 'melee'; x: number; y: number; a: number; weapon: WeaponId }
   | { type: 'impact'; x: number; y: number; on: 'wall' | 'car' | 'ped' }
   | { type: 'ignite'; car: Car }
   | { type: 'explosion'; x: number; y: number }
   | { type: 'pickup'; x: number; y: number; kind: Pickup['kind'] }
-  | { type: 'pedKilled'; ped: Pedestrian; by: 'bullet' | 'car' | 'explosion' }
+  | { type: 'pedKilled'; ped: Pedestrian; by: 'bullet' | 'melee' | 'car' | 'explosion' }
   | { type: 'pickupDropped'; pickup: Pickup }
   | { type: 'playerHit'; x: number; y: number }
   | { type: 'busted'; x: number; y: number }
@@ -124,7 +125,8 @@ export class Simulation {
     if (p.car) return null;
     let best: Pedestrian | null = null, bestDist: number = ROB.reach;
     for (const other of this.pedestrians) {
-      if (other.state === 'dead' || other.robbed) continue;
+      // Officers are never rob targets: mugging a cop should not be an option.
+      if (other.state === 'dead' || other.robbed || other.police) continue;
       const d = Math.hypot(other.x - p.x, other.y - p.y);
       if (d < bestDist) { bestDist = d; best = other; }
     }
@@ -181,11 +183,13 @@ export class Simulation {
     }
   }
 
-  /** Drop ammo for the weapon in hand, or the other one when the current weapon has unlimited ammo. */
+  /** Drop ammo for the weapon in hand, or a carried finite-ammo one when the fists are out. */
   private ammoDropWeapon(): WeaponId {
-    const current = this.arsenal.current;
-    if (this.arsenal.ammo[current] !== Infinity) return current;
-    return WEAPON_ORDER.find((w) => w !== current) ?? current;
+    const ars = this.arsenal;
+    const current = slotWeapon(ars.weapons, ars.weaponSlot);
+    if (ars.ammo[current] !== Infinity) return current;
+    const carried = ars.weapons.find((w) => w !== null && ars.ammo[w] !== Infinity);
+    return carried ?? WEAPON_ORDER.find((w) => w !== current && w !== 'fists' && w !== 'knife') ?? current;
   }
 
   /** Witnesses report at most once each, a moment after spotting the crime. */
@@ -200,13 +204,39 @@ export class Simulation {
     }
   }
 
-  /** Switch to the next weapon that has ammo. */
-  cycleWeapon(): void {
-    const owned = WEAPON_ORDER.filter((w) => (this.arsenal.ammo[w] ?? 0) > 0);
-    if (owned.length === 0) return;
-    const i = owned.indexOf(this.arsenal.current);
-    this.arsenal.current = owned[(i + 1) % owned.length];
+  /** Step a slot index in `dir`, wrapping at both ends. */
+  private moveSlot(from: number, dir: -1 | 1, count: number): number {
+    return (((from + dir) % count) + count) % count;
+  }
+
+  /** Selecting a slot always allows an immediate follow-up attack. */
+  private resetTrigger(): void {
     this.arsenal.cooldown = 0;
+    this.arsenal.triggerHeld = false;
+  }
+
+  /** Scroll through the weapon slots, including the empty (fists) ones. */
+  cycleWeapon(dir: -1 | 1): void {
+    const ars = this.arsenal;
+    ars.weaponSlot = this.moveSlot(ars.weaponSlot, dir, ars.weapons.length);
+    this.resetTrigger();
+  }
+
+  selectWeaponSlot(slot: number): void {
+    if (slot < 0 || slot >= this.arsenal.weapons.length) return;
+    this.arsenal.weaponSlot = slot;
+    this.resetTrigger();
+  }
+
+  /** Ctrl + scroll. Gadget slots are all empty for now, so the selection just wraps around them. */
+  cycleGadget(dir: -1 | 1): void {
+    const ars = this.arsenal;
+    ars.gadgetSlot = this.moveSlot(ars.gadgetSlot, dir, ars.gadgets.length);
+  }
+
+  selectGadgetSlot(slot: number): void {
+    if (slot < 0 || slot >= this.arsenal.gadgets.length) return;
+    this.arsenal.gadgetSlot = slot;
   }
 
   step(dt: number, input: Input): void {
@@ -227,6 +257,7 @@ export class Simulation {
     this.stepReports(dt);
     this.resolveBodyCollisions();
     this.stepTrigger(dt, input);
+    this.stepGadget(input);
     this.stepBullets(dt);
     this.stepPickups(dt);
   }
@@ -242,7 +273,7 @@ export class Simulation {
   }
 
   /** Hurt a pedestrian; at zero health they die and get flung along (`kx`, `ky`). */
-  damagePedestrian(p: Pedestrian, amount: number, by: 'bullet' | 'car' | 'explosion', kx = 0, ky = 0): void {
+  damagePedestrian(p: Pedestrian, amount: number, by: 'bullet' | 'melee' | 'car' | 'explosion', kx = 0, ky = 0): void {
     if (p.state === 'dead') return;
     p.health -= amount;
     if (p.health > 0) return;
@@ -309,15 +340,15 @@ export class Simulation {
     }
   }
 
-  /** An officer's arrest or gunfire decision, after it has moved for this step. */
+  /** An officer's gunfire decision, after it has moved for this step. Arrest is a fallback when no shot is possible. */
   private policeAct(p: Pedestrian, dt: number): void {
     p.arrestCooldown = Math.max(0, p.arrestCooldown - dt);
     p.shootCooldown = Math.max(0, p.shootCooldown - dt);
     const dx = this.player.x - p.x, dy = this.player.y - p.y;
     const dist = Math.hypot(dx, dy);
-    if (this.wanted >= POLICE.shootWanted) {
-      if (p.shootCooldown > 0 || dist >= POLICE.shootRange) return;
-      if (!this.lineOfSight(p.x, p.y, this.player.x, this.player.y)) return;
+    // Officers don't hold back from shooting: a clear shot at the player is always taken.
+    if (p.shootCooldown <= 0 && dist < POLICE.shootRange
+      && this.lineOfSight(p.x, p.y, this.player.x, this.player.y)) {
       p.shootCooldown = POLICE.shootInterval;
       const a = Math.atan2(dy, dx) + (this.random() * 2 - 1) * POLICE.spread;
       const x = p.x + Math.cos(a) * 12, y = p.y + Math.sin(a) * 12;
@@ -415,13 +446,17 @@ export class Simulation {
   private stepTrigger(dt: number, input: Input): void {
     const ars = this.arsenal, p = this.player;
     ars.cooldown = Math.max(0, ars.cooldown - dt);
-    const w = WEAPONS[ars.current];
-    const wantsShot = input.fire && (w.auto || !ars.triggerHeld);
+    const w = WEAPONS[slotWeapon(ars.weapons, ars.weaponSlot)];
+    // Melee swings, like automatic guns, keep going while the button is held.
+    const wantsAttack = input.fire && (w.kind === 'melee' || w.auto || !ars.triggerHeld);
     ars.triggerHeld = input.fire;
-    if (!wantsShot || ars.cooldown > 0 || (ars.ammo[w.id] ?? 0) <= 0) return;
+    // You can lean out of a car and shoot, but not punch or stab from one.
+    if ((p.car !== null && w.kind === 'melee') || !wantsAttack || ars.cooldown > 0 || (ars.ammo[w.id] ?? 0) <= 0) return;
 
     ars.cooldown = w.interval;
     ars.ammo[w.id] = (ars.ammo[w.id] ?? 0) - 1;
+    if (w.kind === 'melee') { this.meleeAttack(w); return; }
+
     // On foot you face where you shoot; from a car you aim with the mouse, or along the car's heading.
     const aim = p.car ? (input.aim ?? p.a) : p.a;
     const fx = Math.cos(aim), fy = Math.sin(aim);
@@ -437,7 +472,28 @@ export class Simulation {
     this.events.push({ type: 'shot', x, y, a, weapon: w.id });
     if (this.wanted === 0) this.raiseWanted(1); // gunfire alone is enough to get the police's attention
     this.scarePedestrians(p.x, p.y, PED.gunScareRange);
-    if (ars.ammo[w.id] === 0) { delete ars.ammo[w.id]; this.cycleWeapon(); }
+  }
+
+  /** A swing hits every living pedestrian inside a short arc in front of the player. */
+  private meleeAttack(w: MeleeDef): void {
+    const p = this.player;
+    const fx = Math.cos(p.a), fy = Math.sin(p.a);
+    this.events.push({ type: 'melee', x: p.x + fx * w.reach * 0.7, y: p.y + fy * w.reach * 0.7, a: p.a, weapon: w.id });
+    for (const o of this.pedestrians) {
+      if (o.state === 'dead') continue;
+      const dx = o.x - p.x, dy = o.y - p.y, d = Math.hypot(dx, dy);
+      if (d > w.reach + o.r) continue;
+      let delta = Math.abs(Math.atan2(dy, dx) - p.a);
+      if (delta > Math.PI) delta = Math.PI * 2 - delta;
+      if (delta > w.arc) continue;
+      this.damagePedestrian(o, w.damage, 'melee', fx * MELEE.knockback, fy * MELEE.knockback);
+      panic(o, p.x - fx * 40, p.y - fy * 40, this.random); // run away from the attacker
+    }
+  }
+
+  /** Right mouse button is reserved for gadget use; no gadget has behaviour yet. */
+  private stepGadget(input: Input): void {
+    this.arsenal.gadgetHeld = input.gadget;
   }
 
   private stepBullets(dt: number): void {
@@ -468,7 +524,8 @@ export class Simulation {
             if (o.state === 'dead' || Math.hypot(o.x - b.x, o.y - b.y) > o.r) continue;
             this.events.push({ type: 'impact', x: b.x, y: b.y, on: 'ped' });
             this.damagePedestrian(o, b.damage, 'bullet', (b.vx / speed) * 40, (b.vy / speed) * 40);
-            panic(o, b.x - b.vx, b.y - b.vy, this.random); // run along the line of fire, away from the shooter
+            // Officers ignore incoming fire and keep closing in; bystanders run along the line of fire.
+            if (!o.police) panic(o, b.x - b.vx, b.y - b.vy, this.random);
             hit = true;
             break;
           }
@@ -502,9 +559,17 @@ export class Simulation {
     }
   }
 
+  /** Put a picked-up weapon in a free slot (or replace the selected one when all are full). */
   private giveWeapon(weapon: WeaponId, ammo: number): void {
-    const had = (this.arsenal.ammo[weapon] ?? 0) > 0;
-    this.arsenal.ammo[weapon] = (this.arsenal.ammo[weapon] ?? 0) + ammo;
-    if (!had) { this.arsenal.current = weapon; this.arsenal.cooldown = 0; }
+    const ars = this.arsenal;
+    ars.ammo[weapon] = (ars.ammo[weapon] ?? 0) + ammo;
+    let slot = ars.weapons.indexOf(weapon);
+    if (slot < 0) {
+      slot = ars.weapons.indexOf(null);
+      if (slot < 0) slot = ars.weaponSlot;
+      ars.weapons[slot] = weapon;
+    }
+    ars.weaponSlot = slot;
+    this.resetTrigger();
   }
 }

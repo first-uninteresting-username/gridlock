@@ -28,6 +28,11 @@ export const PLAYER = {
 /** px/s to the km/h shown on the HUD. */
 export const KMH_PER_PX = 0.25;
 
+export const MELEE = {
+  /** Speed added to a pedestrian hit by a melee attack, in the attack direction. */
+  knockback: 110,
+};
+
 /** Where a shot starts, relative to the shooter's centre. */
 export const MUZZLE = {
   /** On foot: forward and to the right, where the gun is held. */
@@ -141,9 +146,7 @@ export const POLICE = {
   /** Fraction of the pedestrian population that is police. */
   fraction: 0.15,
   health: 60,
-  /** At this wanted level and above, officers shoot instead of trying to arrest. */
-  shootWanted: 4,
-  /** Close enough to make an arrest. */
+  /** Close enough to make an arrest when an officer can't get a shot off. */
   arrestRange: 20,
   /** Minimum seconds between one officer's arrest attempts. */
   arrestCooldown: 2.5,
