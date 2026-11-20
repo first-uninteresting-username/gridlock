@@ -14,6 +14,7 @@ const FIXED_SPRITES = {
   'ped-head': [8, 8],
   'ped-blood': [30, 30],
   pickup: [40, 40],
+  cash: [40, 40],
 } as const satisfies Record<string, readonly [number, number]>;
 
 /** Each car model has its own body (tinted to the car's colour), trim and wreck, drawn at the size of its box. */

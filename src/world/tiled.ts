@@ -1,7 +1,8 @@
 // Turns a Tiled map (the raw .tmj JSON) into game data: the tile layer becomes the City, and the
 // object layers become spawns. Works on plain JSON, with no Phaser involved.
 import { CAR_MODELS, CAR_MODEL_IDS, isCarModelId, type CarModelId } from '../sim/models';
-import { isWeaponId, type WeaponId } from '../sim/weapons';
+import type { PickupContents } from '../sim/Simulation';
+import { isWeaponId } from '../sim/weapons';
 import { City, TILE_KINDS, type TileDef, type TileKind } from './City';
 
 export interface TiledProperty {
@@ -52,12 +53,7 @@ export interface Spawn {
   model?: CarModelId;
 }
 
-export interface PickupSpawn {
-  x: number;
-  y: number;
-  weapon: WeaponId;
-  ammo: number;
-}
+export type PickupSpawn = PickupContents & { x: number; y: number };
 
 export interface CityData {
   city: City;
@@ -112,6 +108,22 @@ const toSpawn = (o: TiledObject, i: number): Spawn => {
     color: parseColor(prop(o, 'color')) ?? CAR_COLORS[Math.floor(hash01(o.x, o.y, i) * CAR_COLORS.length)],
   };
 };
+
+const DEFAULT_AMMO = 30;
+
+/** A pickup holds either cash (an `amount`) or a weapon (a `weapon` and optional `ammo`). */
+function toPickup(o: TiledObject): PickupSpawn {
+  const at = { x: o.x, y: o.y };
+  const amount = prop(o, 'amount'), weapon = prop(o, 'weapon'), ammo = prop(o, 'ammo');
+  if (amount !== undefined) {
+    if (typeof amount !== 'number' || !Number.isInteger(amount) || amount <= 0) {
+      throw new Error(`Pickup at ${o.x},${o.y} has invalid amount "${String(amount)}" (expected a whole number above 0)`);
+    }
+    return { ...at, kind: 'cash', amount };
+  }
+  if (!isWeaponId(weapon)) throw new Error(`Pickup at ${o.x},${o.y} has unknown weapon "${String(weapon)}"`);
+  return { ...at, kind: 'weapon', weapon, ammo: typeof ammo === 'number' ? ammo : DEFAULT_AMMO };
+}
 
 /** Tiled stores flip/rotate flags in the top bits of a tile id; the id itself is the low 29 bits. */
 const GID_MASK = 0x1fffffff;
@@ -169,10 +181,6 @@ export function buildCityData(map: TiledMap): CityData {
     city: new City(map.width, map.height, map.tilewidth, cells, defs),
     player: toSpawn(player, 0),
     cars: objects('cars').map((o, i) => ({ ...toSpawn(o, i), model: carModel(o, i) })),
-    pickups: objects('pickups').map((o) => {
-      const weapon = prop(o, 'weapon'), ammo = prop(o, 'ammo');
-      if (!isWeaponId(weapon)) throw new Error(`Pickup at ${o.x},${o.y} has unknown weapon "${String(weapon)}"`);
-      return { x: o.x, y: o.y, weapon, ammo: typeof ammo === 'number' ? ammo : 30 };
-    }),
+    pickups: objects('pickups').map(toPickup),
   };
 }

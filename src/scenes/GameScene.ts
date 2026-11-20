@@ -137,6 +137,7 @@ export class GameScene extends Phaser.Scene {
     this.buildings.draw(this.rig.x, this.rig.y, this.cameras.main.worldView);
     const ars = this.sim.arsenal, ammo = ars.ammo[ars.current] ?? 0;
     this.hud.setWanted(this.sim.wanted, MAX_WANTED);
+    this.hud.setCash(this.sim.cash);
     this.hud.setStatus(car
       ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
       : `On foot · ${WEAPONS[ars.current].name} ${ammo === Infinity ? '∞' : ammo}`);

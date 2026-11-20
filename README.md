@@ -83,7 +83,8 @@ properties, so existing maps are not touched by `gen:tileset`.
 
 - **spawns**: a point named `player`, with optional `heading` in degrees (0 = east, 90 = south).
 - **cars**: points with `heading`, an optional `color` and an optional `model` (see below). Cars with no `model` get a random one, the same every time for a given spot.
-- **pickups**: points with `weapon` (`smg`) and `ammo`. They respawn 30 s after being collected.
+- **pickups**: points with either `weapon` (`smg`) and `ammo`, or `amount` (whole dollars of cash).
+  They respawn 30 s after being collected. Cash adds to `sim.cash`, which the HUD shows.
 
 ## Car models
 
