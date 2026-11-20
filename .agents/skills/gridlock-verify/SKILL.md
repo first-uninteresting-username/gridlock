@@ -41,6 +41,10 @@ game updates as files change.
 Use the Playwright MCP tools (`browser_navigate`, `browser_run_code_unsafe`,
 `browser_take_screenshot`, `browser_console_messages`; load them with ToolSearch first).
 
+Use your own Playwright browser instance. Other agents run in parallel in their own worktrees, so
+do not attach to, drive, or close another agent's Playwright; only close the browser session you
+started yourself.
+
 - Navigate to `http://localhost:5199/` and wait about a second for the Boot scene.
 - In dev builds `window.gridlock = { sim, scene }` exists, so state can be read and set directly:
   `await page.evaluate(() => gridlock.sim.player.a)`. Use it to assert behavior, for example

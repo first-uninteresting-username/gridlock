@@ -15,6 +15,8 @@ export const CAR = {
 export const PLAYER = {
   radius: 9,
   walkSpeed: 160,
+  /** Forward speed while sprinting (Shift held). */
+  sprintSpeed: 280,
   backSpeed: 90,
   turnRate: 4,
   /** How far from a car's body you can be and still get in. */
@@ -27,6 +29,15 @@ export const KMH_PER_PX = 0.25;
 export const MELEE = {
   /** Speed added to a pedestrian hit by a melee attack, in the attack direction. */
   knockback: 110,
+};
+
+/** Where a shot starts, relative to the shooter's centre. */
+export const MUZZLE = {
+  /** On foot: forward and to the right, where the gun is held. */
+  footForward: 14,
+  footSide: 4,
+  /** In a car: how far past its outer edge, along the aim direction, the shot begins. */
+  carMargin: 6,
 } as const;
 
 export const DAMAGE = {
@@ -47,6 +58,11 @@ export const PICKUP = {
   respawn: 30,
 } as const;
 
+export const DRIVER = {
+  /** Share of parked cars that start with someone in the driver's seat. */
+  spawnChance: 0.6,
+} as const;
+
 export const PED = {
   radius: 7,
   /** How many pedestrians the city keeps alive. */
@@ -61,6 +77,10 @@ export const PED = {
   carScareRange: 70,
   /** A car faster than this kills pedestrians it touches; slower ones just shove them. */
   carKillSpeed: 120,
+  /** Seconds a pedestrian needs to get clear of a road tile; the headway used when checking for traffic. */
+  crossTime: 1.2,
+  /** Base seconds a pedestrian waits at the kerb before trying a blocked crossing again. */
+  kerbWait: 0.7,
   /** Gunshots scare pedestrians this close. */
   gunScareRange: 420,
   explosionScareRange: 600,

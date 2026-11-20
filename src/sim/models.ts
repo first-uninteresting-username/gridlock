@@ -10,6 +10,12 @@ export interface Axle {
   readonly steered?: boolean;
 }
 
+/** Where the driver sits, in car-local world px: x forward, y to the car's right (negative = left). */
+export interface Seat {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface Handling {
   accel: number;
   brake: number;
@@ -37,6 +43,8 @@ export interface CarModel {
   /** Relative weight: heavier cars shove lighter ones around in a crash. */
   readonly mass: number;
   readonly axles: readonly Axle[];
+  /** Driver's seat, lined up with the cabin glass in this model's trim art. */
+  readonly driverSeat: Seat;
   readonly handling: Readonly<Handling>;
   /** How common the model is among the map's cars that don't name one. */
   readonly spawnWeight: number;
@@ -63,6 +71,7 @@ export const CAR_MODELS: Readonly<Record<CarModelId, CarModel>> = {
     id: 'sedan', name: 'Sedan',
     halfLength: 24, halfWidth: 13, health: 100, mass: 1, spawnWeight: 30,
     axles: [{ x: 15, wheels: 2, steered: true }, { x: -15, wheels: 2 }],
+    driverSeat: { x: -8, y: -4 },
     handling: sedanHandling,
   },
   // Small and light: dies fast, but is nimble and grips well.
@@ -70,6 +79,7 @@ export const CAR_MODELS: Readonly<Record<CarModelId, CarModel>> = {
     id: 'compact', name: 'Compact',
     halfLength: 19, halfWidth: 11, health: 70, mass: 0.7, spawnWeight: 25,
     axles: [{ x: 12, wheels: 2, steered: true }, { x: -12, wheels: 2 }],
+    driverSeat: { x: -6, y: -3 },
     handling: handling({ accel: 300, maxSpeed: 470, grip: 12.5, steerRate: 3.4, handbrakeGrip: 1.6 }),
   },
   // Fastest car, but the tail steps out easily.
@@ -77,6 +87,7 @@ export const CAR_MODELS: Readonly<Record<CarModelId, CarModel>> = {
     id: 'sports', name: 'Sports car',
     halfLength: 25, halfWidth: 12, health: 80, mass: 0.9, spawnWeight: 15,
     axles: [{ x: 16, wheels: 2, steered: true }, { x: -16, wheels: 2 }],
+    driverSeat: { x: -8, y: -3 },
     handling: handling({ accel: 460, maxSpeed: 700, grip: 7, steerRate: 2.6, handbrakeGrip: 0.9, coastDrag: 90 }),
   },
   // Roomy and tough, slow to get going and to turn.
@@ -84,6 +95,8 @@ export const CAR_MODELS: Readonly<Record<CarModelId, CarModel>> = {
     id: 'van', name: 'Van',
     halfLength: 29, halfWidth: 14, health: 150, mass: 1.7, spawnWeight: 12,
     axles: [{ x: 19, wheels: 2, steered: true }, { x: -18, wheels: 2 }],
+    // Cab is at the front; the rest of the van is cargo.
+    driverSeat: { x: 15, y: -4 },
     handling: handling({ accel: 220, brake: 700, maxSpeed: 420, maxReverse: 140, grip: 9, steerRate: 2.1, handbrakeDrag: 380 }),
   },
   // Six wheels and a lot of steel. Slow to get going and swings wide, but nothing pushes it around.
@@ -91,6 +104,7 @@ export const CAR_MODELS: Readonly<Record<CarModelId, CarModel>> = {
     id: 'lorry', name: 'Lorry',
     halfLength: 40, halfWidth: 15, health: 260, mass: 3.5, spawnWeight: 8,
     axles: [{ x: 28, wheels: 2, steered: true }, { x: -12, wheels: 2 }, { x: -26, wheels: 2 }],
+    driverSeat: { x: 21, y: -4 },
     handling: handling({ accel: 170, brake: 600, reverseAccel: 140, maxSpeed: 340, maxReverse: 110, grip: 8, steerRate: 1.6, handbrakeDrag: 300, handbrakeGrip: 1.8 }),
   },
   // Three wheels: tiny, twitchy and flimsy.
@@ -98,6 +112,7 @@ export const CAR_MODELS: Readonly<Record<CarModelId, CarModel>> = {
     id: 'trike', name: 'Trike',
     halfLength: 14, halfWidth: 9, health: 40, mass: 0.4, spawnWeight: 10,
     axles: [{ x: 10, wheels: 1, steered: true }, { x: -9, wheels: 2 }],
+    driverSeat: { x: -5, y: -2 },
     handling: handling({ accel: 280, maxSpeed: 380, maxReverse: 130, grip: 6, steerRate: 4.2, handbrakeGrip: 1, handbrakeSteerBoost: 1.3 }),
   },
 };

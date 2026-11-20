@@ -1,7 +1,9 @@
 // Turns a Tiled map (the raw .tmj JSON) into game data: the tile layer becomes the City, and the
 // object layers become spawns. Works on plain JSON, with no Phaser involved.
+import { DRIVER_LOOKS } from '../sim/driver';
 import { CAR_MODELS, CAR_MODEL_IDS, isCarModelId, type CarModelId } from '../sim/models';
 import type { PickupContents } from '../sim/Simulation';
+import { DRIVER } from '../sim/tuning';
 import { isWeaponId } from '../sim/weapons';
 import { City, TILE_KINDS, type TileDef, type TileKind } from './City';
 
@@ -53,12 +55,19 @@ export interface Spawn {
   model?: CarModelId;
 }
 
+/** A car's spawn also fixes its model and who is in the driver's seat. */
+export interface CarSpawn extends Spawn {
+  readonly model: CarModelId;
+  /** Outfit of the seated driver, or null for an empty car. */
+  readonly driver: number | null;
+}
+
 export type PickupSpawn = PickupContents & { x: number; y: number };
 
 export interface CityData {
   city: City;
   player: Spawn;
-  cars: Spawn[];
+  cars: CarSpawn[];
   pickups: PickupSpawn[];
 }
 
@@ -97,6 +106,14 @@ function carModel(o: TiledObject, i: number): CarModelId {
   let r = hash01(o.x, o.y, i + 1000) * total;
   for (const id of CAR_MODEL_IDS) if ((r -= CAR_MODELS[id].spawnWeight) < 0) return id;
   return CAR_MODEL_IDS[0];
+}
+
+/** The driver of a car at a given spot: a Tiled `driver` flag overrides the deterministic default. */
+function carDriver(o: TiledObject, i: number): number | null {
+  const flag = prop(o, 'driver');
+  if (flag === false) return null;
+  const present = flag === true || (flag === undefined && hash01(o.x, o.y, i + 2000) < DRIVER.spawnChance);
+  return present ? Math.floor(hash01(o.x, o.y, i + 3000) * DRIVER_LOOKS) : null;
 }
 
 const toSpawn = (o: TiledObject, i: number): Spawn => {
@@ -180,7 +197,7 @@ export function buildCityData(map: TiledMap): CityData {
   return {
     city: new City(map.width, map.height, map.tilewidth, cells, defs),
     player: toSpawn(player, 0),
-    cars: objects('cars').map((o, i) => ({ ...toSpawn(o, i), model: carModel(o, i) })),
+    cars: objects('cars').map((o, i) => ({ ...toSpawn(o, i), model: carModel(o, i), driver: carDriver(o, i) })),
     pickups: objects('pickups').map(toPickup),
   };
 }

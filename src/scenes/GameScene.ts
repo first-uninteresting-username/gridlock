@@ -7,6 +7,7 @@ import { PedestrianView } from '../render/PedestrianView';
 import { PickupView } from '../render/PickupView';
 import { PlayerView } from '../render/PlayerView';
 import { carSpeed, createCar } from '../sim/car';
+import { createDriver } from '../sim/driver';
 import { createPlayer } from '../sim/player';
 import { MAX_WANTED, Simulation, type Pickup } from '../sim/Simulation';
 import { slotWeapon, WEAPONS } from '../sim/weapons';
@@ -20,7 +21,7 @@ import { buildCityData, type TiledMap } from '../world/tiled';
 const STEP = 1 / 120; // fixed simulation step
 const MAX_FRAME = 0.1; // ignore longer gaps (tab switch) instead of fast-forwarding
 
-type Keys = Record<'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'SPACE', Phaser.Input.Keyboard.Key>;
+type Keys = Record<'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'SPACE' | 'SHIFT', Phaser.Input.Keyboard.Key>;
 
 export class GameScene extends Phaser.Scene {
   private sim!: Simulation;
@@ -52,7 +53,10 @@ export class GameScene extends Phaser.Scene {
     map.createLayer('tiles', tiles, 0, 0)?.setDepth(0);
     const data = buildCityData(this.cache.tilemap.get('city').data as TiledMap);
 
-    const cars = data.cars.map((s) => createCar(s.x, s.y, s.a, s.color ?? 0xffffff, CAR_MODELS[s.model ?? 'sedan']));
+    const cars = data.cars.map((s) => createCar(
+      s.x, s.y, s.a, s.color ?? 0xffffff, CAR_MODELS[s.model],
+      s.driver === null ? null : createDriver(s.driver),
+    ));
     const pickups: Pickup[] = data.pickups.map((k) => ({ ...k, respawn: 0 }));
     this.sim = new Simulation(data.city, createPlayer(data.player.x, data.player.y, data.player.a), cars, pickups);
     this.sim.populate(PED.count);
@@ -72,7 +76,7 @@ export class GameScene extends Phaser.Scene {
     this.scale.on('resize', (size: Phaser.Structs.Size) => cam.setSize(size.width, size.height));
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE') as Keys;
+    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT') as Keys;
     const toggle = (e: KeyboardEvent) => { if (!e.repeat) this.wantToggle = true; };
     kb.on('keydown-E', toggle);
     kb.on('keydown-F', toggle);
@@ -118,17 +122,21 @@ export class GameScene extends Phaser.Scene {
     const up = k.W.isDown || k.UP.isDown, down = k.S.isDown || k.DOWN.isDown;
     const left = k.A.isDown || k.LEFT.isDown, right = k.D.isDown || k.RIGHT.isDown;
     const p = this.sim.player;
-    // Mouse aim applies on foot only; in a car the keys steer as usual.
+    const inCar = p.car !== null;
+    // Mouse aim works on foot and from a car, so you can aim out of a window while driving.
     let aim: number | null = null;
-    if (!p.car && this.pointerSeen && this.menu.mouseAim) {
+    if (this.pointerSeen && this.menu.mouseAim) {
       const w = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
       aim = Math.atan2(w.y - p.y, w.x - p.x);
     }
+    // Space fires on foot; in a car it is the handbrake, so only the mouse fires there.
+    const firing = (k.SPACE.isDown && !inCar) || (ptr.leftButtonDown() && (inCar || aim !== null));
     return {
       throttle: (up ? 1 : 0) - (down ? 1 : 0),
       steer: (right ? 1 : 0) - (left ? 1 : 0),
       handbrake: k.SPACE.isDown,
-      fire: k.SPACE.isDown || (aim !== null && ptr.leftButtonDown()), // Space shoots on foot and is the handbrake in a car
+      sprint: k.SHIFT.isDown,
+      fire: firing,
       gadget: ptr.rightButtonDown(), // reserved for gadget use; no gadget has behaviour yet
       aim,
       moveX: (right ? 1 : 0) - (left ? 1 : 0),
