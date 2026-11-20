@@ -2,9 +2,9 @@ import type Phaser from 'phaser';
 import { CAR_MODELS, CAR_MODEL_IDS, type CarModelId } from '../sim/models';
 import { CAR_ART } from './pixelart/cars';
 import { GLYPH_ART, ICON_ART } from './pixelart/font';
-import { CORPSE_ART, DRIVER_BODY_ART, GUN_PISTOL_ART, GUN_SMG_ART, PED_BODY_ART, PED_HEAD_ART, PLAYER_BODY_ART, PLAYER_FOOT_ART, PLAYER_HEAD_ART } from './pixelart/people';
+import { CORPSE_ART, DRIVER_BODY_ART, GUN_PISTOL_ART, GUN_SMG_ART, PED_BODY_ART, PED_HEAD_ART, PLAYER_BODY_ART, PLAYER_FOOT_ART, PLAYER_HEAD_ART, POLICE_BODY_ART, POLICE_HEAD_ART } from './pixelart/people';
 import { mapHeight, mapWidth, paintPixelMap, type PixelMap } from './pixelart/pixelMap';
-import { BLOOD_ART, CASH_ART, PICKUP_ART, WHEEL_ART } from './pixelart/props';
+import { AMMO_ART, BLOOD_ART, CASH_ART, PICKUP_ART, WHEEL_ART } from './pixelart/props';
 
 /**
  * World pixels per art pixel. Every sprite is a text pixel map (src/render/pixelart/), painted into a
@@ -23,11 +23,14 @@ const FIXED_SPRITES = {
   'gun-smg': GUN_SMG_ART,
   'ped-body': PED_BODY_ART,
   'ped-head': PED_HEAD_ART,
+  'police-body': POLICE_BODY_ART,
+  'police-head': POLICE_HEAD_ART,
   'ped-corpse': CORPSE_ART,
   'driver-body': DRIVER_BODY_ART,
   'ped-blood': BLOOD_ART,
   pickup: PICKUP_ART,
   cash: CASH_ART,
+  ammo: AMMO_ART,
 } as const satisfies Record<string, PixelMap>;
 
 /** Each car model has its own body (tinted to the car's colour), trim and wreck, drawn at the size of its box. */
