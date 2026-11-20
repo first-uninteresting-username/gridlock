@@ -95,8 +95,9 @@ export const CAR_MODELS: Readonly<Record<CarModelId, CarModel>> = {
     id: 'van', name: 'Van',
     halfLength: 29, halfWidth: 14, health: 150, mass: 1.7, spawnWeight: 12,
     axles: [{ x: 19, wheels: 2, steered: true }, { x: -18, wheels: 2 }],
-    // Cab is at the front; the rest of the van is cargo.
-    driverSeat: { x: 15, y: -4 },
+    // Cab is at the front; the rest of the van is cargo. Keep the seat behind the opaque windshield
+    // so the driver drawn under the trim stays visible.
+    driverSeat: { x: 8, y: -4 },
     handling: handling({ accel: 220, brake: 700, maxSpeed: 420, maxReverse: 140, grip: 9, steerRate: 2.1, handbrakeDrag: 380 }),
   },
   // Six wheels and a lot of steel. Slow to get going and swings wide, but nothing pushes it around.
