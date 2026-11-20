@@ -25,7 +25,7 @@ export class PlayerView {
     this.root = scene.add.container(0, 0, [this.footL, this.footR, body, this.held, head]).setDepth(3);
   }
 
-  sync(weapon: WeaponId | null): void {
+  sync(weapon: WeaponId): void {
     const p = this.player;
     this.root.setVisible(!p.car);
     if (p.car) return;
@@ -33,7 +33,6 @@ export class PlayerView {
     const s = Math.sin(p.stride) * 5;
     this.footL.setPosition(s, -4);
     this.footR.setPosition(-s, 4);
-    this.held.setVisible(weapon !== null);
-    if (weapon !== null && this.held.texture.key !== HELD[weapon]) setSprite(this.held, HELD[weapon]);
+    if (this.held.texture.key !== HELD[weapon]) setSprite(this.held, HELD[weapon]);
   }
 }

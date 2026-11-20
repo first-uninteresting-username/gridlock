@@ -9,7 +9,7 @@ import { PlayerView } from '../render/PlayerView';
 import { carSpeed, createCar } from '../sim/car';
 import { createPlayer } from '../sim/player';
 import { MAX_WANTED, Simulation, type Pickup } from '../sim/Simulation';
-import { WEAPONS } from '../sim/weapons';
+import { slotWeapon, WEAPONS } from '../sim/weapons';
 import { CAR_MODELS } from '../sim/models';
 import { CAR, KMH_PER_PX, PED } from '../sim/tuning';
 import type { Input } from '../sim/types';
@@ -159,7 +159,7 @@ export class GameScene extends Phaser.Scene {
     for (const v of this.carViews) v.sync();
     for (const v of this.pedViews) v.sync();
     for (const v of this.pickupViews) v.sync(time / 1000);
-    const ars = this.sim.arsenal, weapon = ars.weapons[ars.weaponSlot];
+    const ars = this.sim.arsenal, weapon = slotWeapon(ars.weapons, ars.weaponSlot);
     this.playerView.sync(weapon);
     this.effects.update(frame, this.sim.cars, this.sim.bullets);
     this.sim.view = this.cameras.main.worldView; // replacement pedestrians appear outside this
@@ -167,10 +167,10 @@ export class GameScene extends Phaser.Scene {
     this.hud.setWanted(this.sim.wanted, MAX_WANTED);
     this.hud.setCash(this.sim.cash);
     this.hud.setLoadout(ars.weapons, ars.weaponSlot, ars.gadgetSlot, ars.gadgetHeld);
-    const ammo = weapon === null ? '' : ` ${(ars.ammo[weapon] ?? 0) === Infinity ? '∞' : ars.ammo[weapon] ?? 0}`;
+    const ammo = ars.ammo[weapon] ?? 0;
     this.hud.setStatus(car
       ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
-      : `On foot · ${weapon === null ? 'Unarmed' : WEAPONS[weapon].name}${ammo}`);
+      : `On foot · ${WEAPONS[weapon].name} ${ammo === Infinity ? '∞' : ammo}`);
     this.hud.sync();
   }
 }

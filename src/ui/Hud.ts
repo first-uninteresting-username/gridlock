@@ -127,8 +127,9 @@ export class Hud {
   /** Highlights the selected weapon and gadget slots; a held right mouse button lights up the gadget. */
   setLoadout(weapons: readonly (WeaponId | null)[], weaponSlot: number, gadgetSlot: number, gadgetHeld: boolean): void {
     this.weaponSlots.forEach((slot, i) => {
-      const weapon = weapons[i] ?? null;
-      slot.set(weapon === null ? 'hud-slot-empty' : WEAPON_ICONS[weapon], i === weaponSlot ? SLOT_ACTIVE_COLOR : SLOT_IDLE_COLOR);
+      // An empty slot is fists, so show the same icon rather than a blank frame.
+      const weapon = weapons[i] ?? 'fists';
+      slot.set(WEAPON_ICONS[weapon], i === weaponSlot ? SLOT_ACTIVE_COLOR : SLOT_IDLE_COLOR);
     });
     this.gadgetSlots.forEach((slot, i) => {
       const tint = i !== gadgetSlot ? SLOT_IDLE_COLOR : gadgetHeld ? SLOT_HELD_COLOR : SLOT_ACTIVE_COLOR;

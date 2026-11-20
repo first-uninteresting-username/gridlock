@@ -47,7 +47,7 @@ export type GadgetSlots = [GadgetId | null, GadgetId | null];
 export interface Arsenal {
   /** Rounds per weapon; a weapon cannot attack while this is 0. Infinity = unlimited. */
   ammo: Partial<Record<WeaponId, number>>;
-  /** The four weapon slots, in the order shown by the HUD. */
+  /** The four weapon slots, in the order shown by the HUD. Empty slots mean fists. */
   weapons: WeaponSlots;
   /** Index of the selected weapon slot. */
   weaponSlot: number;
@@ -62,8 +62,8 @@ export interface Arsenal {
 }
 
 export const createArsenal = (): Arsenal => ({
-  ammo: { fists: Infinity, knife: Infinity, pistol: Infinity, smg: 0 },
-  weapons: ['fists', 'knife', 'pistol', 'smg'],
+  ammo: { fists: Infinity },
+  weapons: [null, null, null, null],
   weaponSlot: 0,
   gadgets: [null, null],
   gadgetSlot: 0,
@@ -71,6 +71,9 @@ export const createArsenal = (): Arsenal => ({
   cooldown: 0,
   triggerHeld: false,
 });
+
+/** An empty slot is the unarmed fallback, so there is always a weapon to attack with. */
+export const slotWeapon = (weapons: WeaponSlots, slot: number): WeaponId => weapons[slot] ?? 'fists';
 
 export const isWeaponId = (v: unknown): v is WeaponId => typeof v === 'string' && v in WEAPONS;
 

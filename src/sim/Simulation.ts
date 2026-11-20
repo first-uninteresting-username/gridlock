@@ -4,7 +4,7 @@ import { createPedestrian, killPedestrian, panic, resetPedestrian, sidewalkSpots
 import { findCarToEnter, findExitSpot, stepOnFoot, type Player } from './player';
 import { DAMAGE, MELEE, PED, PICKUP } from './tuning';
 import type { Input, World } from './types';
-import { createArsenal, WEAPONS, type Arsenal, type Bullet, type MeleeDef, type WeaponId } from './weapons';
+import { createArsenal, slotWeapon, WEAPONS, type Arsenal, type Bullet, type MeleeDef, type WeaponId } from './weapons';
 
 /** What a pickup gives you. */
 export type PickupContents =
@@ -93,14 +93,9 @@ export class Simulation {
     return true;
   }
 
-  /** Step a slot selection in `dir`, skipping empty slots. Leaves an only-slot selection unchanged. */
-  private nextSlot<T>(slots: readonly (T | null)[], from: number, dir: -1 | 1): number {
-    const n = slots.length;
-    for (let step = 1; step <= n; step++) {
-      const i = (((from + dir * step) % n) + n) % n;
-      if (slots[i] !== null) return i;
-    }
-    return from;
+  /** Step a slot index in `dir`, wrapping at both ends. */
+  private moveSlot(from: number, dir: -1 | 1, count: number): number {
+    return (((from + dir) % count) + count) % count;
   }
 
   /** Selecting a slot always allows an immediate follow-up attack. */
@@ -109,9 +104,10 @@ export class Simulation {
     this.arsenal.triggerHeld = false;
   }
 
-  /** Scroll through the weapon slots. */
+  /** Scroll through the weapon slots, including the empty (fists) ones. */
   cycleWeapon(dir: -1 | 1): void {
-    this.arsenal.weaponSlot = this.nextSlot(this.arsenal.weapons, this.arsenal.weaponSlot, dir);
+    const ars = this.arsenal;
+    ars.weaponSlot = this.moveSlot(ars.weaponSlot, dir, ars.weapons.length);
     this.resetTrigger();
   }
 
@@ -123,8 +119,8 @@ export class Simulation {
 
   /** Ctrl + scroll. Gadget slots are all empty for now, so the selection just wraps around them. */
   cycleGadget(dir: -1 | 1): void {
-    const n = this.arsenal.gadgets.length;
-    this.arsenal.gadgetSlot = (((this.arsenal.gadgetSlot + dir) % n) + n) % n;
+    const ars = this.arsenal;
+    ars.gadgetSlot = this.moveSlot(ars.gadgetSlot, dir, ars.gadgets.length);
   }
 
   selectGadgetSlot(slot: number): void {
@@ -266,12 +262,11 @@ export class Simulation {
   private stepTrigger(dt: number, input: Input): void {
     const ars = this.arsenal, p = this.player;
     ars.cooldown = Math.max(0, ars.cooldown - dt);
-    const wid = ars.weapons[ars.weaponSlot];
-    const w = wid === null ? null : WEAPONS[wid];
+    const w = WEAPONS[slotWeapon(ars.weapons, ars.weaponSlot)];
     // Melee swings, like automatic guns, keep going while the button is held.
-    const wantsAttack = input.fire && w !== null && (w.kind === 'melee' || w.auto || !ars.triggerHeld);
+    const wantsAttack = input.fire && (w.kind === 'melee' || w.auto || !ars.triggerHeld);
     ars.triggerHeld = input.fire;
-    if (p.car || w === null || !wantsAttack || ars.cooldown > 0 || (ars.ammo[w.id] ?? 0) <= 0) return;
+    if (p.car || !wantsAttack || ars.cooldown > 0 || (ars.ammo[w.id] ?? 0) <= 0) return;
 
     ars.cooldown = w.interval;
     ars.ammo[w.id] = (ars.ammo[w.id] ?? 0) - 1;
@@ -358,11 +353,17 @@ export class Simulation {
     }
   }
 
+  /** Put a picked-up weapon in a free slot (or replace the selected one when all are full). */
   private giveWeapon(weapon: WeaponId, ammo: number): void {
     const ars = this.arsenal;
     ars.ammo[weapon] = (ars.ammo[weapon] ?? 0) + ammo;
-    const slot = ars.weapons.indexOf(weapon);
-    if (slot >= 0) ars.weaponSlot = slot;
+    let slot = ars.weapons.indexOf(weapon);
+    if (slot < 0) {
+      slot = ars.weapons.indexOf(null);
+      if (slot < 0) slot = ars.weaponSlot;
+      ars.weapons[slot] = weapon;
+    }
+    ars.weaponSlot = slot;
     this.resetTrigger();
   }
 }

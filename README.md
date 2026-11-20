@@ -23,8 +23,9 @@ cars, and can be shot or run over.
 | Esc | Menu: controls and settings (pauses the game) |
 
 The HUD strip at the top left shows the four weapon slots and two empty gadget slots; the selected
-slot is gold. All four weapon slots are filled at the start: fists and knife (melee), pistol and
-SMG (guns). SMG ammo comes from pickups.
+slot is gold. All weapon slots start empty, and an empty slot means fists. A weapon pickup fills
+the first free slot and selects it (or replaces the selected slot when all four are full); SMG ammo
+comes from pickups.
 
 ## Development
 
