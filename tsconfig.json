@@ -15,5 +15,5 @@
     "noEmit": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src", "tests", "tools/*.ts", "vite.config.ts"]
+  "include": ["src", "tools/*.ts", "vite.config.ts"]
 }

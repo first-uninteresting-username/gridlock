@@ -4,5 +4,6 @@
 
 - Work on a branch in a separate checkout (`git worktree add ../wt-gridlock-<topic> -b <topic>`),
   never directly on `main`, and land changes through GitHub pull requests.
-- Do not create tests.
+- Do not create tests: no test files, test directories, or test frameworks/dependencies (the project
+  has none). Verify changes with `npm run check` and by running the game instead.
 - Do not add `Co-Authored-By` trailers (or any other AI attribution) to commit messages or PRs.
