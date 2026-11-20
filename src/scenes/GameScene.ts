@@ -35,7 +35,7 @@ export class GameScene extends Phaser.Scene {
   private rig!: CameraRig;
   private hud!: Hud;
   private tooltip!: InteractionTooltip;
-  private menu = new Menu();
+  private menu!: Menu;
   /** Mouse aim only takes over once the pointer has actually moved, so keyboard-only play still works. */
   private pointerSeen = false;
   private keys!: Keys;
@@ -76,6 +76,7 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setBackgroundColor('#0d0f12');
     this.hud = new Hud(this);
+    this.menu = new Menu(this);
     this.rig = new CameraRig(cam, data.player.x, data.player.y);
     this.scale.on('resize', (size: Phaser.Structs.Size) => cam.setSize(size.width, size.height));
 
@@ -164,5 +165,6 @@ export class GameScene extends Phaser.Scene {
       ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
       : `On foot · ${WEAPONS[ars.current].name} ${ammo === Infinity ? '∞' : ammo}`);
     this.hud.sync();
+    this.menu.sync();
   }
 }
