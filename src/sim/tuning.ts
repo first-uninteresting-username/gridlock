@@ -14,8 +14,12 @@ export const CAR = {
 
 export const PLAYER = {
   radius: 9,
-  /** Health lost to police gunfire; reaching zero gets the player booked like a bust. */
+  /** Health lost to gunfire, blasts and fast cars; at zero the last save is restored. */
   health: 100,
+  /** A car slower than this only shoves the player aside. */
+  carHitSpeed: 140,
+  /** Health lost per second per px/s above `carHitSpeed` while a car drives through the player. */
+  carHitDamage: 1.5,
   walkSpeed: 160,
   /** Forward speed while sprinting (Shift held). */
   sprintSpeed: 280,
@@ -108,8 +112,8 @@ export const TRAFFIC = {
 
 export const PED = {
   radius: 7,
-  /** How many pedestrians the city keeps alive. */
-  count: 120,
+  /** How many pedestrians the city keeps alive: about one per ten sidewalk tiles of the map. */
+  count: 300,
   health: 24,
   walkSpeed: 52,
   runSpeed: 150,

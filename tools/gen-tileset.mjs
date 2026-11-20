@@ -14,6 +14,7 @@ const WALK = '#9a968c', WALK_EDGE = '#8e8a81', WALK_LIGHT = '#a39f95';
 const GRASS = '#4f7a3a', GRASS_DARK = '#446c33', GRASS_LIGHT = '#5b8a45';
 const PAINT = '#d8d3c4'; // muted white for crosswalks, bays and arrows
 const WATER = '#39596c', WATER_DARK = '#2f4b5c', WATER_LIGHT = '#43677b';
+const LEAF = '#365a2b', LEAF_DARK = '#2c4a24', LEAF_LIGHT = '#43693a';
 const PIP = '#1b2430';
 
 const N = T / ART_PIXEL; // art pixels per tile side
@@ -94,6 +95,28 @@ function arrowTile() {
   return g;
 }
 
+/**
+ * Woodland: four tree crowns per tile, each kept inside its own quarter so tiles join seamlessly into
+ * a forest, with grass showing through the gaps. Lit from the top like everything else.
+ */
+function treesTile() {
+  const g = grassTile();
+  const Q = N / 2, R = Q / 2 - 1; // quarter size, crown radius in art pixels
+  for (const [qx, qy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+    const cx = qx * Q + Q / 2 + (qx === qy ? -1 : 1), cy = qy * Q + Q / 2; // stagger so the rows don't look planted
+    for (let y = -R; y <= R; y++) {
+      for (let x = -R; x <= R; x++) {
+        const d = x * x + y * y;
+        if (d > R * R) continue;
+        const c = y <= -R / 2 && x <= 0 ? LEAF_LIGHT : y >= R / 2 || (x >= R / 2 && y >= 0) ? LEAF_DARK : LEAF;
+        g[cy + y][cx + x] = c;
+      }
+    }
+    speckle(g, LEAF, LEAF_DARK, 0.08, 6 + qx + 2 * qy);
+  }
+  return g;
+}
+
 // A building tile only shows in Tiled: in the game its roof is drawn over it with a lean.
 function buildingTile(t) {
   const g = grid(shade(t.roof, 0.8));
@@ -116,6 +139,7 @@ function tilePixels(t) {
     case TILE.PARKING: return parkingTile();
     case TILE.ARROW: return arrowTile();
     case TILE.WATER: return waterTile();
+    case TILE.TREES: return treesTile();
     default: return buildingTile(t);
   }
 }
@@ -126,7 +150,8 @@ function tilePixels(t) {
 const STRIDE = T + SPACING, CELL = T + 2 * MARGIN, ROWS = TILE_COUNT / COLUMNS;
 const IW = MARGIN * 2 + COLUMNS * T + (COLUMNS - 1) * SPACING, IH = MARGIN * 2 + ROWS * T + (ROWS - 1) * SPACING;
 
-// Paint every tile into one image-sized grid of texels (1 texel = 1 SVG unit).
+// Paint every tile into one image-sized grid of texels (1 texel = 1 SVG unit). Unused cells stay null
+// and are left transparent.
 const image = Array.from({ length: IH }, () => Array(IW).fill(null));
 for (const t of TILES) {
   const px = tilePixels(t);
@@ -161,7 +186,7 @@ function rectsByColour() {
   return byColour;
 }
 
-const paths = [...rectsByColour()].map(([c, rs]) => `  <path fill="${c}" d="${rs.map((r) => `M${r.x} ${r.y}h${r.w}v${r.h}h-${r.w}z`).join('')}"/>`);
+const paths = [...rectsByColour()].filter(([c]) => c !== null).map(([c, rs]) => `  <path fill="${c}" d="${rs.map((r) => `M${r.x} ${r.y}h${r.w}v${r.h}h-${r.w}z`).join('')}"/>`);
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${IW}" height="${IH}" viewBox="0 0 ${IW} ${IH}" shape-rendering="crispEdges">\n${paths.join('\n')}\n</svg>\n`;
 
 const root = new URL('../public/', import.meta.url);

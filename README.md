@@ -11,8 +11,9 @@ cars, and can be shot or run over. You can rob them at close range, except polic
 can't be robbed: victims drop cash (and occasionally ammo), and witnesses may raise the wanted level.
 You can also lean out of a car window and shoot while driving. Gunfire and kills raise wanted too,
 and some pedestrians are police. Once wanted, officers shoot on sight and only resort to an arrest
-when they can't get a clear shot; they don't flinch at incoming fire. Being busted or shot down costs
-$100 and sends you back to the start. Killed officers drop SMG ammo.
+when they can't get a clear shot; they don't flinch at incoming fire. Being busted costs $100 and
+sends you back to the start; being shot down returns you to your last save. Killed officers drop
+SMG ammo.
 
 ## Controls
 
@@ -28,7 +29,15 @@ $100 and sends you back to the start. Killed officers drop SMG ammo.
 | E / Enter | Get into the nearest car, or get out |
 | R | Reload the current gun |
 | F | General action: rob a nearby pedestrian (not police; a prompt appears when one is close enough), otherwise get in/out of the nearest car |
-| Esc | Menu: controls and settings (pauses the game) |
+| Esc | Menu: controls, settings and Save game (pauses the game) |
+
+## Saving
+
+The game saves itself when it starts, and you can save again from the menu with **Save game**.
+Saves live in the browser's local storage, so they survive a reload. Gunfire, blasts and fast cars
+can kill you; when your health reaches zero you return to the last save with the cash, weapons,
+wanted level and car damage you had when you saved. Being busted still costs $100 and sends you back
+to the start. There is always a save to return to, even if you never saved manually.
 
 The HUD strip at the top left shows the four weapon slots and two empty gadget slots; the selected
 slot is gold. All weapon slots start empty, and an empty slot means fists. A weapon pickup fills
@@ -75,20 +84,28 @@ tools/
 
 ## Editing the city
 
-Open `public/maps/city.tmj` in [Tiled](https://www.mapeditor.org) and paint. The map is entirely
-hand-placed; nothing generates it.
+Open `public/maps/city.tmj` in [Tiled](https://www.mapeditor.org) and paint. Nothing in the repo
+generates the map, so edits made in Tiled are safe.
+
+The city is modelled on [Nowiny](https://pl.wikipedia.org/wiki/Nowiny_(powiat_kielecki)), a village
+near Kielce in Poland, at about 6 m per tile. Its streets, buildings, woods, ponds and the Bobrza river
+were traced once from OpenStreetMap: the Białe Zagłębie housing estate in the middle, Krakowska
+running diagonally along the west side, the Perła pool and GKS Nowiny stadium to the east, and the
+Przemysłowa industrial area to the south-east. Map data © OpenStreetMap contributors, available under
+the [Open Database License](https://www.openstreetmap.org/copyright).
 
 **Terrain, streets and buildings are all tiles**, painted on one tile layer called `tiles`. What a
 tile means comes from its custom properties in the tileset (select a tile in Tiled's Tileset panel):
 
 | Property | Applies to | Meaning |
 |---|---|---|
-| `kind` | every tile | `road`, `sidewalk`, `grass` or `building`. Required. Buildings are solid; everything else can be driven and walked on. |
+| `kind` | every tile | `road`, `sidewalk`, `grass`, `water`, `tree` or `building`. Required. Buildings, water and trees are solid; everything else can be driven and walked on. |
 | `height` | buildings | Roof lean, about 0.1 (low) to 0.4 (tall). |
 | `roof` | buildings | Roof colour. |
 
-The tileset has plain road, road with a centre dash (two orientations), sidewalk and grass, plus
-building tiles in seven roof colours and three heights (the pips on the tile show the height).
+The tileset has plain road, road with a centre dash (two orientations), crosswalks, parking bays, lane
+arrows, sidewalk, grass, water and woodland (tree crowns), plus building tiles in ten roof colours and
+four heights (the pips on the tile show the height).
 A building is just building tiles painted next to each other: tiles of equal height merge into one
 roof, and walls appear wherever a tile borders something lower. An empty (unpainted) cell is
 solid, like the edge of the map.

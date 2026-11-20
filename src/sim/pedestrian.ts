@@ -1,7 +1,7 @@
 import { carContains, carSpeed, toCarLocal, type Car } from './car';
 import { bodyHitsWorld, pushOutOfCars } from './player';
 import { PED, POLICE } from './tuning';
-import type { World } from './types';
+import { isSolidKind, type GroundKind, type World } from './types';
 
 export type PedState = 'walk' | 'flee' | 'chase' | 'dead';
 
@@ -53,7 +53,7 @@ export const PED_LOOKS = 8;
 
 const DIRS: readonly (readonly [number, number])[] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
-const walkable = (k: string | null): boolean => k !== null && k !== 'building' && k !== 'water';
+const walkable = (k: GroundKind | null): boolean => k !== null && !isSolidKind(k);
 
 export function createPedestrian(x: number, y: number, random: () => number, police = false): Pedestrian {
   const p = { r: PED.radius } as Pedestrian;

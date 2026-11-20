@@ -65,6 +65,7 @@ too. Eight-digit hex is `rrggbbaa`.
 | Lane paint | `#d8c25a` | road markings |
 | Sidewalk | `#9a968c`, joints `#8e8a81`, speckle `#a39f95` | sidewalk |
 | Grass | `#4f7a3a` (`#446c33`, `#5b8a45`) | grass |
+| Leaves | `#365a2b` (shade `#2c4a24`, light `#43693a`) | woodland tree crowns |
 | Roofs | `#8a8f98 #9b8b7a #7d8a7a #a3a09a #8c7f8f #b09a80 #7f8c9c` | muted building roofs, in `tools/tiles.mjs` |
 | **Accent** | **`#ffd23f`** (`a`, glow `e`) | pickups, wanted stars, focus, anything to notice |
 | Headlight | `#ffe9a8` (`Y`) | lights; muzzle flash `#fff1a8` |

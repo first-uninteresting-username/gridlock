@@ -26,6 +26,7 @@ const MAX_DESC_LINES = 5;
 const MAX_AIM_LINES = 3;
 
 const TITLE = 'Gridlock';
+const SAVE_LABEL = 'Save game';
 const RESUME = 'Resume';
 const AIM_LABEL = 'Mouse aim (otherwise rotate with A / D)';
 const MENU_LABEL = 'Menu (Esc)';
@@ -43,12 +44,12 @@ const CONTROLS: Control[] = [
   { keys: ['Wheel', '1-4'], description: 'Cycle weapon slots, or select one directly' },
   { keys: ['Ctrl', 'Wheel', '1', '2'], description: 'Select a gadget slot (gadgets have no behaviour yet)' },
   { keys: ['Right click'], description: 'Use the selected gadget (not implemented yet)' },
-  { keys: ['Esc'], description: 'Open or close this menu' },
+  { keys: ['Esc'], description: 'Open or close this menu; save progress from here. Death returns you to the last save.' },
 ];
 
 type ControlText = { caps: PixelText[]; separators: PixelText[]; lines: PixelText[] };
 type Rect = { x: number; y: number; w: number; h: number };
-type Hover = 'menu' | 'resume' | 'check' | null;
+type Hover = 'menu' | 'save' | 'resume' | 'check' | null;
 
 /** Wraps on word boundaries; the bitmap font is monospaced so a line holds `maxChars` glyphs. */
 function wrap(text: string, maxChars: number): string[] {
@@ -93,15 +94,19 @@ export class Menu {
   private readonly settingsLabel: PixelText;
   private readonly controlTexts: ControlText[] = [];
   private readonly aimLines: PixelText[] = [];
+  private readonly saveText: PixelText;
   private readonly resumeText: PixelText;
   private readonly menuText: PixelText;
 
   private readonly menuRect = new Phaser.Geom.Rectangle();
   private readonly panelRect = new Phaser.Geom.Rectangle();
+  private readonly saveRect = new Phaser.Geom.Rectangle();
   private readonly resumeRect = new Phaser.Geom.Rectangle();
   private readonly checkRect = new Phaser.Geom.Rectangle();
   private readonly capRects: Rect[] = [];
   private checkY = 0;
+  private saveX = 0;
+  private saveY = 0;
   private resumeX = 0;
   private resumeY = 0;
   private width = 0;
@@ -112,6 +117,8 @@ export class Menu {
 
   /** Fired whenever the menu opens or closes. */
   onToggle: (open: boolean) => void = () => {};
+  /** Fired when the player asks to save the current run. */
+  onSave: () => void = () => {};
 
   constructor(private readonly scene: Phaser.Scene) {
     this.root = scene.add.container().setScrollFactor(0).setDepth(1100);
@@ -142,6 +149,8 @@ export class Menu {
     }
     for (let i = 0; i < MAX_AIM_LINES; i++) this.aimLines.push(new PixelText(scene, this.panelLayer, 0, 0, TEXT, 1, false));
 
+    this.saveText = new PixelText(scene, this.panelLayer, 0, 0, TEXT, 1, false);
+    this.saveText.set(SAVE_LABEL);
     this.resumeText = new PixelText(scene, this.panelLayer, 0, 0, TEXT, 1, false);
     this.resumeText.set(RESUME);
 
@@ -158,6 +167,10 @@ export class Menu {
       const hit = this.hitTest(p.x, p.y);
       if (!this.isOpen) {
         if (hit === 'menu') this.set(true);
+      } else if (hit === 'save') {
+        this.onSave();
+        this.saveText.set('Saved!');
+        this.scene.time.delayedCall(1000, () => this.saveText.set(SAVE_LABEL));
       } else if (hit === 'resume') {
         this.set(false);
       } else if (hit === 'check') {
@@ -254,9 +267,15 @@ export class Menu {
     for (let i = aimLines.length; i < this.aimLines.length; i++) this.aimLines[i].set('');
     y += Math.max(CHECK, aimLines.length * LINE_H + 3) + 7;
 
+    const sw = SAVE_LABEL.length * FONT_ADVANCE + 12;
     const rw = RESUME.length * FONT_ADVANCE + 12;
-    this.resumeX = Math.round((pw - rw) / 2);
+    // Centre the two buttons as one group, like the single Resume button was.
+    const firstX = Math.round((pw - (sw + 6 + rw)) / 2);
+    this.saveX = firstX;
+    this.saveY = y;
+    this.resumeX = firstX + sw + 6;
     this.resumeY = y;
+    this.saveText.move(this.saveX + 6, y + 4);
     this.resumeText.move(this.resumeX + 6, y + 4);
     y += BTN_H + PAD;
 
@@ -264,6 +283,7 @@ export class Menu {
     const py = Math.round((this.height - y) / 2);
     this.panelLayer.setPosition(px, py);
     this.panelRect.setTo(px, py, pw, y);
+    this.saveRect.setTo(px + this.saveX, py + this.saveY, sw, BTN_H);
     this.resumeRect.setTo(px + this.resumeX, py + this.resumeY, rw, BTN_H);
     this.checkRect.setTo(px + PAD, py + this.checkY, CHECK, CHECK);
 
@@ -275,6 +295,7 @@ export class Menu {
 
   private hitTest(x: number, y: number): Hover {
     if (!this.isOpen) return this.menuRect.contains(x, y) ? 'menu' : null;
+    if (this.saveRect.contains(x, y)) return 'save';
     if (this.resumeRect.contains(x, y)) return 'resume';
     if (this.checkRect.contains(x, y)) return 'check';
     return null;
@@ -303,6 +324,7 @@ export class Menu {
       g.fillRect(PAD + 5, this.checkY + 4, 2, 2);
       g.fillRect(PAD + 7, this.checkY + 2, 2, 2);
     }
+    pixelBox(g, { x: this.saveX, y: this.saveY, w: this.saveRect.width, h: BTN_H }, this.hover === 'save' ? BUTTON_HOVER : BUTTON, BORDER_STRONG);
     pixelBox(g, { x: this.resumeX, y: this.resumeY, w: this.resumeRect.width, h: BTN_H }, this.hover === 'resume' ? BUTTON_HOVER : BUTTON, BORDER_STRONG);
   }
 }
