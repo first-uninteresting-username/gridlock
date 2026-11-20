@@ -11,7 +11,7 @@ export interface Player {
   car: Car | null;
   /** Walk-cycle phase, advanced while moving. */
   stride: number;
-  /** Reaching zero (from police gunfire) books the player like a bust. */
+  /** Reaching zero means the player is killed and the game restores the last save. */
   health: number;
 }
 

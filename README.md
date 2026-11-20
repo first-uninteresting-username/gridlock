@@ -11,8 +11,9 @@ cars, and can be shot or run over. You can rob them at close range, except polic
 can't be robbed: victims drop cash (and occasionally ammo), and witnesses may raise the wanted level.
 You can also lean out of a car window and shoot while driving. Gunfire and kills raise wanted too,
 and some pedestrians are police. Once wanted, officers shoot on sight and only resort to an arrest
-when they can't get a clear shot; they don't flinch at incoming fire. Being busted or shot down costs
-$100 and sends you back to the start. Killed officers drop SMG ammo.
+when they can't get a clear shot; they don't flinch at incoming fire. Being busted costs $100 and
+sends you back to the start; being shot down returns you to your last save. Killed officers drop
+SMG ammo.
 
 ## Controls
 
@@ -27,7 +28,15 @@ $100 and sends you back to the start. Killed officers drop SMG ammo.
 | Right click | Use the selected gadget (not implemented yet) |
 | E / Enter | Get into the nearest car, or get out |
 | F | General action: rob a nearby pedestrian (not police; a prompt appears when one is close enough), otherwise get in/out of the nearest car |
-| Esc | Menu: controls and settings (pauses the game) |
+| Esc | Menu: controls, settings and Save game (pauses the game) |
+
+## Saving
+
+The game saves itself when it starts, and you can save again from the menu with **Save game**.
+Saves live in the browser's local storage, so they survive a reload. Gunfire, blasts and fast cars
+can kill you; when your health reaches zero you return to the last save with the cash, weapons,
+wanted level and car damage you had when you saved. Being busted still costs $100 and sends you back
+to the start. There is always a save to return to, even if you never saved manually.
 
 The HUD strip at the top left shows the four weapon slots and two empty gadget slots; the selected
 slot is gold. All weapon slots start empty, and an empty slot means fists. A weapon pickup fills

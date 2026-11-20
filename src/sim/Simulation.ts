@@ -2,6 +2,7 @@ import { collideCars, separateBodies } from './collide';
 import { carContains, carSpeed, stepCar, type Car } from './car';
 import { createPedestrian, killPedestrian, panic, resetPedestrian, sidewalkSpots, stepPedestrian, type Pedestrian } from './pedestrian';
 import { findCarToEnter, findExitSpot, stepOnFoot, type Player } from './player';
+import { newSave, type SaveData, type SavedPickup } from './save';
 import { DAMAGE, MELEE, MUZZLE, PED, PICKUP, PLAYER, POLICE, ROB } from './tuning';
 import { Traffic } from './traffic';
 import { NO_INPUT, type Input, type World } from './types';
@@ -66,7 +67,7 @@ export class Simulation {
   private readonly spots: [number, number][];
   /** Drives every car with a seated driver except the one the player is in. */
   private readonly traffic: Traffic;
-  /** Where a busted or shot-down player returns to. */
+  /** Where a busted player returns to; a killed player returns to their last save instead. */
   private readonly spawn: { readonly x: number; readonly y: number; readonly a: number };
 
   constructor(
@@ -88,6 +89,92 @@ export class Simulation {
       const spot = this.randomSpot(300);
       if (spot) this.pedestrians.push(createPedestrian(spot[0], spot[1], this.random, this.random() < POLICE.fraction));
     }
+  }
+
+  /** Capture the current run, so a dead player can be put back where they last saved. */
+  snapshot(): SaveData {
+    const p = this.player, ars = this.arsenal;
+    const ammo: SaveData['ammo'] = {};
+    for (const id of WEAPON_ORDER) {
+      const n = this.arsenal.ammo[id];
+      if (n !== undefined) ammo[id] = n === Infinity ? null : n;
+    }
+    return newSave({
+      player: {
+        x: p.x, y: p.y, a: p.a, health: p.health, stride: p.stride,
+        car: p.car ? this.cars.indexOf(p.car) : null,
+      },
+      cars: this.cars.map((c) => ({
+        x: c.x, y: c.y, a: c.a, vx: c.vx, vy: c.vy, health: c.health,
+        steer: c.steer, burning: c.burning, wrecked: c.wrecked,
+      })),
+      pickups: this.pickups.map((k) => ({ ...k, respawn: k.respawn === Infinity ? null : k.respawn })),
+      ammo,
+      weapons: [ars.weapons[0], ars.weapons[1], ars.weapons[2], ars.weapons[3]],
+      weaponSlot: ars.weaponSlot,
+      gadgets: [ars.gadgets[0], ars.gadgets[1]],
+      gadgetSlot: ars.gadgetSlot,
+      wanted: this.wanted,
+      cash: this.cash,
+    });
+  }
+
+  /** Restore into the live objects, so the views keep their references to them. */
+  restore(save: SaveData): void {
+    const p = this.player, sp = save.player;
+    p.x = sp.x; p.y = sp.y; p.a = sp.a;
+    p.health = sp.health; p.stride = sp.stride;
+    p.car = sp.car === null ? null : this.cars[sp.car];
+
+    for (let i = 0; i < this.cars.length; i++) {
+      const c = this.cars[i], sc = save.cars[i];
+      c.x = sc.x; c.y = sc.y; c.a = sc.a; c.vx = sc.vx; c.vy = sc.vy;
+      c.health = sc.health; c.steer = sc.steer; c.burning = sc.burning; c.wrecked = sc.wrecked;
+    }
+    for (let i = 0; i < save.pickups.length; i++) {
+      const sp = save.pickups[i];
+      const respawn = sp.respawn === null ? Infinity : sp.respawn;
+      const k = this.pickups[i];
+      if (k) k.respawn = respawn;
+      else this.pickups.push(this.pickupFromSave(sp));
+    }
+
+    const ars = this.arsenal;
+    ars.ammo = {};
+    for (const id of WEAPON_ORDER) {
+      const n = save.ammo[id];
+      if (n === null) ars.ammo[id] = Infinity;
+      else if (n !== undefined) ars.ammo[id] = n;
+    }
+    ars.weapons = [save.weapons[0], save.weapons[1], save.weapons[2], save.weapons[3]];
+    ars.weaponSlot = save.weaponSlot;
+    ars.gadgets = [save.gadgets[0], save.gadgets[1]];
+    ars.gadgetSlot = save.gadgetSlot;
+    ars.gadgetHeld = false;
+    ars.cooldown = 0;
+    ars.triggerHeld = false;
+    this.wanted = save.wanted;
+    this.cash = save.cash;
+    this.bullets.length = 0;
+    this.events.length = 0;
+  }
+
+  /** Recreate loot dropped during the saved run; it has no map spawn to rebuild it from. */
+  private pickupFromSave(s: SavedPickup): Pickup {
+    const respawn = s.respawn === null ? Infinity : s.respawn;
+    switch (s.kind) {
+      case 'weapon': return { kind: 'weapon', weapon: s.weapon, ammo: s.ammo, x: s.x, y: s.y, respawn, once: s.once };
+      case 'ammo': return { kind: 'ammo', weapon: s.weapon, amount: s.amount, x: s.x, y: s.y, respawn, once: s.once };
+      case 'cash': return { kind: 'cash', amount: s.amount, x: s.x, y: s.y, respawn, once: s.once };
+    }
+  }
+
+  /** Hurt the player from any source; the scene turns a death into a return to the last save. */
+  damagePlayer(amount: number): void {
+    const p = this.player;
+    if (p.health <= 0) return;
+    p.health = Math.max(0, p.health - amount);
+    if (p.health === 0) this.events.push({ type: 'playerDown', x: p.x, y: p.y });
   }
 
   /** Add wanted stars, clamped to the legal range. Called for player crimes. */
@@ -251,7 +338,10 @@ export class Simulation {
     for (let i = 0; i < this.cars.length; i++)
       for (let j = i + 1; j < this.cars.length; j++) collideCars(this.cars[i], this.cars[j], this.world);
     if (p.car) { p.x = p.car.x; p.y = p.car.y; p.a = p.car.a; }
-    else stepOnFoot(p, dt, input, this.world, this.cars);
+    else {
+      this.hurtPlayerWithCars(dt); // check before stepOnFoot shoves the player clear of the car
+      stepOnFoot(p, dt, input, this.world, this.cars);
+    }
 
     this.stepPedestrians(dt);
     this.stepReports(dt);
@@ -286,6 +376,16 @@ export class Simulation {
       };
       this.pickups.push(pickup);
       this.events.push({ type: 'pickupDropped', pickup });
+    }
+  }
+
+  /** A fast car hurts the player it drives through, just before shoving them aside. */
+  private hurtPlayerWithCars(dt: number): void {
+    const p = this.player;
+    for (const c of this.cars) {
+      const speed = carSpeed(c);
+      if (speed < PLAYER.carHitSpeed || !carContains(c, p.x, p.y, p.r)) continue;
+      this.damagePlayer((speed - PLAYER.carHitSpeed) * PLAYER.carHitDamage * dt);
     }
   }
 
@@ -359,7 +459,7 @@ export class Simulation {
       this.events.push({ type: 'shot', x, y, a, weapon: 'pistol' });
     } else if (p.arrestCooldown === 0 && dist < POLICE.arrestRange) {
       p.arrestCooldown = POLICE.arrestCooldown;
-      this.bookPlayer('busted');
+      this.bookPlayer();
     }
   }
 
@@ -373,8 +473,8 @@ export class Simulation {
     return true;
   }
 
-  /** Busted or shot down: a fine, a clean record and a trip back to the starting spot. */
-  private bookPlayer(type: 'busted' | 'playerDown'): void {
+  /** Busted: a fine, a clean record and a trip back to the starting spot. */
+  private bookPlayer(): void {
     const p = this.player;
     this.cash = Math.max(0, this.cash - POLICE.fine);
     this.wanted = 0;
@@ -383,7 +483,7 @@ export class Simulation {
     p.y = this.spawn.y;
     p.a = this.spawn.a;
     p.health = PLAYER.health;
-    this.events.push({ type, x: p.x, y: p.y });
+    this.events.push({ type: 'busted', x: p.x, y: p.y });
   }
 
   /** Keep living bodies from overlapping: pedestrians avoid each other and the player on foot. */
@@ -441,6 +541,8 @@ export class Simulation {
       const f = 1 - d / R, k = DAMAGE.explosionImpulse * f * PED.knockback;
       this.damagePedestrian(p, DAMAGE.explosionDamage * f, 'explosion', (dx / (d || 1)) * k, (dy / (d || 1)) * k);
     }
+    const pd = Math.hypot(this.player.x - c.x, this.player.y - c.y);
+    if (pd < R) this.damagePlayer(DAMAGE.explosionDamage * (1 - pd / R));
   }
 
   private stepTrigger(dt: number, input: Input): void {
@@ -513,9 +615,8 @@ export class Simulation {
         if (b.from === 'police') {
           const p = this.player;
           if (!p.car && Math.hypot(p.x - b.x, p.y - b.y) <= p.r) {
-            p.health -= b.damage;
+            this.damagePlayer(b.damage);
             this.events.push({ type: 'playerHit', x: b.x, y: b.y });
-            if (p.health <= 0) this.bookPlayer('playerDown');
             hit = true;
             break;
           }
