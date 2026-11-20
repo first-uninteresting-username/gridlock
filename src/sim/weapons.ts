@@ -35,6 +35,9 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
   smg: { id: 'smg', name: 'SMG', damage: 7, interval: 0.08, kind: 'gun', bulletSpeed: 1500, spread: 0.08, auto: true, range: 600 },
 };
 
+/** In declaration order, used when picking a weapon for a dropped ammo pickup. */
+export const WEAPON_ORDER = Object.keys(WEAPONS) as WeaponId[];
+
 export const WEAPON_SLOT_COUNT = 4;
 export const GADGET_SLOT_COUNT = 2;
 

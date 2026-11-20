@@ -58,6 +58,29 @@ export const PICKUP = {
   respawn: 30,
 } as const;
 
+/** Street robbery: how close you must get, who sees it and what the victim drops. */
+export const ROB = {
+  /** Centre-to-centre distance at which a pedestrian can be robbed. Body separation is 16 px. */
+  reach: 34,
+  /** A robbery within this range makes a pedestrian a witness. */
+  witnessRange: 260,
+  /** Seconds before a witness decides whether to report the crime. */
+  reportDelay: 1.2,
+  /** Random extra delay on top of `reportDelay`, so reports trickle in. */
+  reportJitter: 0.8,
+  /** Chance each witness reports; every report adds one wanted level. */
+  reportChance: 0.35,
+  /** Extra time before the victim themselves decides to report. */
+  victimDelay: 0.6,
+  /** Cash dropped, a whole number of dollars in this inclusive range. */
+  cashMin: 5,
+  cashMax: 20,
+  /** Chance a robbery also drops ammo. */
+  ammoChance: 0.12,
+  /** Rounds in a dropped ammo pickup. */
+  ammoAmount: 12,
+} as const;
+
 export const DRIVER = {
   /** Share of parked cars that start with someone in the driver's seat. */
   spawnChance: 0.6,

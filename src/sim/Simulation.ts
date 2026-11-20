@@ -2,9 +2,9 @@ import { collideCars, separateBodies } from './collide';
 import { carContains, carSpeed, stepCar, type Car } from './car';
 import { createPedestrian, killPedestrian, panic, resetPedestrian, sidewalkSpots, stepPedestrian, type Pedestrian } from './pedestrian';
 import { findCarToEnter, findExitSpot, stepOnFoot, type Player } from './player';
-import { DAMAGE, MELEE, MUZZLE, PED, PICKUP } from './tuning';
+import { DAMAGE, MELEE, MUZZLE, PED, PICKUP, ROB } from './tuning';
 import type { Input, World } from './types';
-import { createArsenal, slotWeapon, WEAPONS, type Arsenal, type Bullet, type MeleeDef, type WeaponId } from './weapons';
+import { createArsenal, slotWeapon, WEAPONS, WEAPON_ORDER, type Arsenal, type Bullet, type MeleeDef, type WeaponId } from './weapons';
 
 /** What a pickup gives you. */
 export type PickupContents =
@@ -16,6 +16,8 @@ export type Pickup = PickupContents & {
   readonly y: number;
   /** Seconds until it reappears; 0 = available. */
   respawn: number;
+  /** Dropped loot is collected once and never comes back; map pickups respawn. */
+  once?: boolean;
 };
 
 /** Things that happened during a step, for the renderer to turn into effects and sounds. */
@@ -41,7 +43,7 @@ export class Simulation {
    * only appear outside it. Until it is set, they just appear far from the player.
    */
   view: { x: number; y: number; width: number; height: number } | null = null;
-  /** Wanted level, 0..MAX_WANTED. Displayed only; nothing raises it or reacts to it yet. */
+  /** Wanted level, 0..MAX_WANTED. Raised by witnesses of a robbery. */
   wanted = 0;
   /** Money in dollars, a whole number. Earned from cash pickups. */
   cash = 0;
@@ -93,6 +95,66 @@ export class Simulation {
     return true;
   }
 
+  /** Nearest pedestrian the player could rob right now, for the prompt and for the action itself. */
+  robTarget(): Pedestrian | null {
+    const p = this.player;
+    if (p.car) return null;
+    let best: Pedestrian | null = null, bestDist: number = ROB.reach;
+    for (const other of this.pedestrians) {
+      if (other.state === 'dead' || other.robbed) continue;
+      const d = Math.hypot(other.x - p.x, other.y - p.y);
+      if (d < bestDist) { bestDist = d; best = other; }
+    }
+    return best;
+  }
+
+  /** Rob the pedestrian in reach, if any. Both query and action use `robTarget`, so the prompt never lies. */
+  robNearest(): boolean {
+    const victim = this.robTarget();
+    if (!victim) return false;
+    victim.robbed = true;
+    panic(victim, this.player.x, this.player.y, this.random);
+    // Anyone nearby may report it; the victim needs a moment to react before deciding.
+    for (const p of this.pedestrians) {
+      if (p.state === 'dead' || Math.hypot(p.x - victim.x, p.y - victim.y) > ROB.witnessRange) continue;
+      const extra = p === victim ? ROB.victimDelay : 0;
+      p.report = ROB.reportDelay + extra + this.random() * ROB.reportJitter;
+    }
+    this.dropLoot(victim.x, victim.y);
+    return true;
+  }
+
+  /** Victims leave a small cash bundle and, now and then, ammo for a weapon the player can use. */
+  private dropLoot(x: number, y: number): void {
+    const jitter = () => (this.random() * 2 - 1) * 8;
+    const amount = ROB.cashMin + Math.floor(this.random() * (ROB.cashMax - ROB.cashMin + 1));
+    this.pickups.push({ kind: 'cash', amount, x: x + jitter(), y: y + jitter(), respawn: 0, once: true });
+    if (this.random() < ROB.ammoChance) {
+      this.pickups.push({ kind: 'weapon', weapon: this.ammoDropWeapon(), ammo: ROB.ammoAmount, x: x + jitter(), y: y + jitter(), respawn: 0, once: true });
+    }
+  }
+
+  /** Drop ammo for the weapon in hand, or a carried finite-ammo one when the fists are out. */
+  private ammoDropWeapon(): WeaponId {
+    const ars = this.arsenal;
+    const current = slotWeapon(ars.weapons, ars.weaponSlot);
+    if (ars.ammo[current] !== Infinity) return current;
+    const carried = ars.weapons.find((w) => w !== null && ars.ammo[w] !== Infinity);
+    return carried ?? WEAPON_ORDER.find((w) => w !== current && w !== 'fists' && w !== 'knife') ?? current;
+  }
+
+  /** Witnesses report at most once each, a moment after spotting the crime. */
+  private stepReports(dt: number): void {
+    for (const p of this.pedestrians) {
+      if (p.report < 0) continue;
+      if (p.state === 'dead') { p.report = -1; continue; }
+      p.report -= dt;
+      if (p.report > 0) continue;
+      p.report = -1;
+      if (this.random() < ROB.reportChance) this.wanted = Math.min(MAX_WANTED, this.wanted + 1);
+    }
+  }
+
   /** Step a slot index in `dir`, wrapping at both ends. */
   private moveSlot(from: number, dir: -1 | 1, count: number): number {
     return (((from + dir) % count) + count) % count;
@@ -140,6 +202,7 @@ export class Simulation {
     else stepOnFoot(p, dt, input, this.world, this.cars);
 
     this.stepPedestrians(dt);
+    this.stepReports(dt);
     this.resolveBodyCollisions();
     this.stepTrigger(dt, input);
     this.stepGadget(input);
@@ -353,7 +416,7 @@ export class Simulation {
       if (Math.hypot(p.x - k.x, p.y - k.y) > PICKUP.radius) continue;
       if (k.kind === 'weapon') this.giveWeapon(k.weapon, k.ammo);
       else this.cash += k.amount;
-      k.respawn = PICKUP.respawn;
+      k.respawn = k.once ? Infinity : PICKUP.respawn;
       this.events.push({ type: 'pickup', x: k.x, y: k.y, kind: k.kind });
     }
   }
