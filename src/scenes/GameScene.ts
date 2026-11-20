@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { HudScene } from './HudScene';
 import { BuildingLayer } from '../render/BuildingLayer';
 import { CameraRig } from '../render/CameraRig';
 import { CarView } from '../render/CarView';
@@ -14,9 +15,9 @@ import { WEAPONS } from '../sim/weapons';
 import { CAR_MODELS } from '../sim/models';
 import { CAR, KMH_PER_PX, PED } from '../sim/tuning';
 import type { Input } from '../sim/types';
-import { Hud } from '../ui/Hud';
+import type { Hud } from '../ui/Hud';
 import { InteractionTooltip } from '../ui/InteractionTooltip';
-import { Menu } from '../ui/Menu';
+import type { Menu } from '../ui/Menu';
 import { buildCityData, type TiledMap } from '../world/tiled';
 
 const STEP = 1 / 120; // fixed simulation step
@@ -75,8 +76,9 @@ export class GameScene extends Phaser.Scene {
 
     const cam = this.cameras.main;
     cam.setBackgroundColor('#0d0f12');
-    this.hud = new Hud(this);
-    this.menu = new Menu(this);
+    const ui = this.scene.get('hud') as HudScene;
+    this.hud = ui.hud;
+    this.menu = ui.menu;
     this.rig = new CameraRig(cam, data.player.x, data.player.y);
     this.scale.on('resize', (size: Phaser.Structs.Size) => cam.setSize(size.width, size.height));
 

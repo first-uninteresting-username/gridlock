@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
+import { HudScene } from './scenes/HudScene';
 
 // The canvas is rendered at one pixel per art pixel and scaled up by a whole number of device pixels
 // (CSS `image-rendering: pixelated`), so every art pixel is the same size on screen. The scale grows
@@ -29,7 +30,8 @@ const game = new Phaser.Game({
   // Nearest-neighbour textures, no antialiasing, sprites snapped to whole canvas pixels.
   render: { pixelArt: true },
   scale: { mode: Phaser.Scale.NONE, ...initial },
-  scene: [BootScene, GameScene],
+  // HudScene renders after GameScene so the UI sits on top of the world.
+  scene: [BootScene, GameScene, HudScene],
 });
 
 window.addEventListener('resize', () => {
