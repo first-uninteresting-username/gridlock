@@ -43,6 +43,9 @@ export class Effects {
       case 'shot':
         this.add(e.x + Math.cos(e.a) * 4, e.y + Math.sin(e.a) * 4, { life: 0.05, r: 6, color: 0xfff1a8 });
         break;
+      case 'melee':
+        this.add(e.x, e.y, { life: 0.07, r: 4, color: 0xffffff, alpha: 0.8 });
+        break;
       case 'impact':
         if (e.on === 'ped') { this.burst(e.x, e.y, 6, 150, { life: 0.3, r: 1.8, color: 0xa3151a }); break; }
         this.burst(e.x, e.y, 4, 220, { life: 0.15, r: 1.6, color: e.on === 'car' ? 0xffb347 : 0xfff1a8 });

@@ -24,6 +24,11 @@ export const PLAYER = {
 /** px/s to the km/h shown on the HUD. */
 export const KMH_PER_PX = 0.25;
 
+export const MELEE = {
+  /** Speed added to a pedestrian hit by a melee attack, in the attack direction. */
+  knockback: 110,
+} as const;
+
 export const DAMAGE = {
   /** Below this fraction of its full health a car smokes. */
   smokeBelow: 0.45,

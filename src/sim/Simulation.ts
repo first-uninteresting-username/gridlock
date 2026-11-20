@@ -2,9 +2,9 @@ import { collideCars, separateBodies } from './collide';
 import { carContains, carSpeed, stepCar, type Car } from './car';
 import { createPedestrian, killPedestrian, panic, resetPedestrian, sidewalkSpots, stepPedestrian, type Pedestrian } from './pedestrian';
 import { findCarToEnter, findExitSpot, stepOnFoot, type Player } from './player';
-import { DAMAGE, PED, PICKUP } from './tuning';
+import { DAMAGE, MELEE, PED, PICKUP } from './tuning';
 import type { Input, World } from './types';
-import { createArsenal, WEAPON_ORDER, WEAPONS, type Arsenal, type Bullet, type WeaponId } from './weapons';
+import { createArsenal, WEAPONS, type Arsenal, type Bullet, type MeleeDef, type WeaponId } from './weapons';
 
 /** What a pickup gives you. */
 export type PickupContents =
@@ -21,11 +21,12 @@ export type Pickup = PickupContents & {
 /** Things that happened during a step, for the renderer to turn into effects and sounds. */
 export type SimEvent =
   | { type: 'shot'; x: number; y: number; a: number; weapon: WeaponId }
+  | { type: 'melee'; x: number; y: number; a: number; weapon: WeaponId }
   | { type: 'impact'; x: number; y: number; on: 'wall' | 'car' | 'ped' }
   | { type: 'ignite'; car: Car }
   | { type: 'explosion'; x: number; y: number }
   | { type: 'pickup'; x: number; y: number; kind: Pickup['kind'] }
-  | { type: 'pedKilled'; ped: Pedestrian; by: 'bullet' | 'car' | 'explosion' };
+  | { type: 'pedKilled'; ped: Pedestrian; by: 'bullet' | 'melee' | 'car' | 'explosion' };
 
 /** Highest wanted level. */
 export const MAX_WANTED = 5;
@@ -92,12 +93,43 @@ export class Simulation {
     return true;
   }
 
-  /** Switch to the next weapon that has ammo. */
-  cycleWeapon(): void {
-    const owned = WEAPON_ORDER.filter((w) => (this.arsenal.ammo[w] ?? 0) > 0);
-    const i = owned.indexOf(this.arsenal.current);
-    this.arsenal.current = owned[(i + 1) % owned.length];
+  /** Step a slot selection in `dir`, skipping empty slots. Leaves an only-slot selection unchanged. */
+  private nextSlot<T>(slots: readonly (T | null)[], from: number, dir: -1 | 1): number {
+    const n = slots.length;
+    for (let step = 1; step <= n; step++) {
+      const i = (((from + dir * step) % n) + n) % n;
+      if (slots[i] !== null) return i;
+    }
+    return from;
+  }
+
+  /** Selecting a slot always allows an immediate follow-up attack. */
+  private resetTrigger(): void {
     this.arsenal.cooldown = 0;
+    this.arsenal.triggerHeld = false;
+  }
+
+  /** Scroll through the weapon slots. */
+  cycleWeapon(dir: -1 | 1): void {
+    this.arsenal.weaponSlot = this.nextSlot(this.arsenal.weapons, this.arsenal.weaponSlot, dir);
+    this.resetTrigger();
+  }
+
+  selectWeaponSlot(slot: number): void {
+    if (slot < 0 || slot >= this.arsenal.weapons.length) return;
+    this.arsenal.weaponSlot = slot;
+    this.resetTrigger();
+  }
+
+  /** Ctrl + scroll. Gadget slots are all empty for now, so the selection just wraps around them. */
+  cycleGadget(dir: -1 | 1): void {
+    const n = this.arsenal.gadgets.length;
+    this.arsenal.gadgetSlot = (((this.arsenal.gadgetSlot + dir) % n) + n) % n;
+  }
+
+  selectGadgetSlot(slot: number): void {
+    if (slot < 0 || slot >= this.arsenal.gadgets.length) return;
+    this.arsenal.gadgetSlot = slot;
   }
 
   step(dt: number, input: Input): void {
@@ -114,6 +146,7 @@ export class Simulation {
     this.stepPedestrians(dt);
     this.resolveBodyCollisions();
     this.stepTrigger(dt, input);
+    this.stepGadget(input);
     this.stepBullets(dt);
     this.stepPickups(dt);
   }
@@ -129,7 +162,7 @@ export class Simulation {
   }
 
   /** Hurt a pedestrian; at zero health they die and get flung along (`kx`, `ky`). */
-  damagePedestrian(p: Pedestrian, amount: number, by: 'bullet' | 'car' | 'explosion', kx = 0, ky = 0): void {
+  damagePedestrian(p: Pedestrian, amount: number, by: 'bullet' | 'melee' | 'car' | 'explosion', kx = 0, ky = 0): void {
     if (p.state === 'dead') return;
     p.health -= amount;
     if (p.health > 0) return;
@@ -233,13 +266,17 @@ export class Simulation {
   private stepTrigger(dt: number, input: Input): void {
     const ars = this.arsenal, p = this.player;
     ars.cooldown = Math.max(0, ars.cooldown - dt);
-    const w = WEAPONS[ars.current];
-    const wantsShot = input.fire && (w.auto || !ars.triggerHeld);
+    const wid = ars.weapons[ars.weaponSlot];
+    const w = wid === null ? null : WEAPONS[wid];
+    // Melee swings, like automatic guns, keep going while the button is held.
+    const wantsAttack = input.fire && w !== null && (w.kind === 'melee' || w.auto || !ars.triggerHeld);
     ars.triggerHeld = input.fire;
-    if (p.car || !wantsShot || ars.cooldown > 0 || (ars.ammo[w.id] ?? 0) <= 0) return;
+    if (p.car || w === null || !wantsAttack || ars.cooldown > 0 || (ars.ammo[w.id] ?? 0) <= 0) return;
 
     ars.cooldown = w.interval;
     ars.ammo[w.id] = (ars.ammo[w.id] ?? 0) - 1;
+    if (w.kind === 'melee') { this.meleeAttack(w); return; }
+
     const fx = Math.cos(p.a), fy = Math.sin(p.a);
     // Muzzle: in front of the player, on the right hand.
     const x = p.x + fx * 14 - fy * 4, y = p.y + fy * 14 + fx * 4;
@@ -247,7 +284,28 @@ export class Simulation {
     this.bullets.push({ x, y, vx: Math.cos(a) * w.bulletSpeed, vy: Math.sin(a) * w.bulletSpeed, travelled: 0, range: w.range, damage: w.damage });
     this.events.push({ type: 'shot', x, y, a, weapon: w.id });
     this.scarePedestrians(p.x, p.y, PED.gunScareRange);
-    if (ars.ammo[w.id] === 0) { delete ars.ammo[w.id]; this.cycleWeapon(); }
+  }
+
+  /** A swing hits every living pedestrian inside a short arc in front of the player. */
+  private meleeAttack(w: MeleeDef): void {
+    const p = this.player;
+    const fx = Math.cos(p.a), fy = Math.sin(p.a);
+    this.events.push({ type: 'melee', x: p.x + fx * w.reach * 0.7, y: p.y + fy * w.reach * 0.7, a: p.a, weapon: w.id });
+    for (const o of this.pedestrians) {
+      if (o.state === 'dead') continue;
+      const dx = o.x - p.x, dy = o.y - p.y, d = Math.hypot(dx, dy);
+      if (d > w.reach + o.r) continue;
+      let delta = Math.abs(Math.atan2(dy, dx) - p.a);
+      if (delta > Math.PI) delta = Math.PI * 2 - delta;
+      if (delta > w.arc) continue;
+      this.damagePedestrian(o, w.damage, 'melee', fx * MELEE.knockback, fy * MELEE.knockback);
+      panic(o, p.x - fx * 40, p.y - fy * 40, this.random); // run away from the attacker
+    }
+  }
+
+  /** Right mouse button is reserved for gadget use; no gadget has behaviour yet. */
+  private stepGadget(input: Input): void {
+    this.arsenal.gadgetHeld = input.gadget;
   }
 
   private stepBullets(dt: number): void {
@@ -301,8 +359,10 @@ export class Simulation {
   }
 
   private giveWeapon(weapon: WeaponId, ammo: number): void {
-    const had = (this.arsenal.ammo[weapon] ?? 0) > 0;
-    this.arsenal.ammo[weapon] = (this.arsenal.ammo[weapon] ?? 0) + ammo;
-    if (!had) { this.arsenal.current = weapon; this.arsenal.cooldown = 0; }
+    const ars = this.arsenal;
+    ars.ammo[weapon] = (ars.ammo[weapon] ?? 0) + ammo;
+    const slot = ars.weapons.indexOf(weapon);
+    if (slot >= 0) ars.weaponSlot = slot;
+    this.resetTrigger();
   }
 }

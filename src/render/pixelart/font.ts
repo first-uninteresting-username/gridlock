@@ -119,8 +119,54 @@ export const COIN_ART: PixelMap = [
   '..nnn..',
 ];
 
+/** Slot icons, all white so the HUD can tint the equipped and selected states. */
+const FISTS_ICON_ART: PixelMap = [
+  '.WW..WW.',
+  'WWWWWWWW',
+  'WWWWWWWW',
+  '.WWWWWW.',
+  '..WWWW..',
+];
+
+const KNIFE_ICON_ART: PixelMap = [
+  '......WW',
+  '.....WWW',
+  '....WWW.',
+  '.WWWWW..',
+  'WWWWW...',
+];
+
+const PISTOL_ICON_ART: PixelMap = [
+  '.WWWWWW.',
+  'WW......',
+  'WW......',
+  '.WW.....',
+  '..WW....',
+];
+
+const SMG_ICON_ART: PixelMap = [
+  'WWWWWWWW',
+  'WWWWWWW.',
+  'WW..WW..',
+  '.WW.....',
+  '..WW....',
+];
+
+const EMPTY_SLOT_ICON_ART: PixelMap = [
+  'WWWWWWWW',
+  'W......W',
+  'W......W',
+  'W......W',
+  'WWWWWWWW',
+];
+
 export const ICON_ART: Record<string, PixelMap> = {
   'hud-star-on': STAR_ON_ART,
   'hud-star-off': STAR_OFF_ART,
   'hud-coin': COIN_ART,
+  'hud-fists': FISTS_ICON_ART,
+  'hud-knife': KNIFE_ICON_ART,
+  'hud-pistol': PISTOL_ICON_ART,
+  'hud-smg': SMG_ICON_ART,
+  'hud-slot-empty': EMPTY_SLOT_ICON_ART,
 };

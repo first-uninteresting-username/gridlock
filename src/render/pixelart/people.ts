@@ -59,3 +59,15 @@ export const GUN_SMG_ART: PixelMap = [
   'uuuuuuu',
   '..uu...',
 ];
+
+/** Bare hand in the right-hand slot, small enough not to crowd the player sprite. */
+export const FIST_ART: PixelMap = [
+  'sss',
+  'sss',
+];
+
+/** Held by the handle at the hand's position, blade pointing right. */
+export const KNIFE_ART: PixelMap = [
+  'uuUUUU',
+  'uuUU..',
+];
