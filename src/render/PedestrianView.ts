@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Pedestrian } from '../sim/pedestrian';
-import { addSprite } from './art';
+import { addSprite, setSprite } from './art';
 import { shirtColor } from './looks';
 
 const DEPTH_ALIVE = 2.5; // above cars, below the player
@@ -16,6 +16,7 @@ export class PedestrianView {
   private readonly corpse: Phaser.GameObjects.Image;
   private readonly blood: Phaser.GameObjects.Image;
   private look = -1;
+  private police = false;
   private dead = false;
 
   constructor(scene: Phaser.Scene, private readonly ped: Pedestrian) {
@@ -31,7 +32,14 @@ export class PedestrianView {
 
   sync(): void {
     const p = this.ped;
-    if (p.look !== this.look) { this.look = p.look; this.body.setTint(shirtColor(p.look)); }
+    if (p.police !== this.police) {
+      this.police = p.police;
+      setSprite(this.body, p.police ? 'police-body' : 'ped-body');
+      setSprite(this.head, p.police ? 'police-head' : 'ped-head');
+      if (p.police) this.body.clearTint();
+      else { this.look = -1; this.body.setTint(shirtColor(p.look)); }
+    }
+    if (!p.police && p.look !== this.look) { this.look = p.look; this.body.setTint(shirtColor(p.look)); }
     const dead = p.state === 'dead';
     if (dead !== this.dead) {
       this.dead = dead;

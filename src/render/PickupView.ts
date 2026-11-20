@@ -8,7 +8,8 @@ export class PickupView {
   private readonly root: Phaser.GameObjects.Container;
 
   constructor(scene: Phaser.Scene, private readonly pickup: Pickup) {
-    this.root = scene.add.container(pickup.x, pickup.y, [addSprite(scene, pickup.kind === 'cash' ? 'cash' : 'pickup')]).setDepth(1.5);
+    const sprite = pickup.kind === 'cash' ? 'cash' : pickup.kind === 'ammo' ? 'ammo' : 'pickup';
+    this.root = scene.add.container(pickup.x, pickup.y, [addSprite(scene, sprite)]).setDepth(1.5);
   }
 
   sync(time: number): void {

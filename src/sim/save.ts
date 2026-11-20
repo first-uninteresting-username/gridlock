@@ -3,6 +3,14 @@ import { isWeaponId, type WeaponId } from './weapons';
 const STORAGE_KEY = 'gridlock.save';
 const VERSION = 1;
 
+type SavedPickupBase = { x: number; y: number; respawn: number | null; once?: boolean };
+
+/** Pickup data as stored: Infinity cannot be written to JSON, so it becomes null. */
+export type SavedPickup =
+  | (SavedPickupBase & { kind: 'weapon'; weapon: WeaponId; ammo: number })
+  | (SavedPickupBase & { kind: 'ammo'; weapon: WeaponId; amount: number })
+  | (SavedPickupBase & { kind: 'cash'; amount: number });
+
 /** A point-in-time copy of everything a dead player should come back to. */
 export interface SaveData {
   version: number;
@@ -27,7 +35,8 @@ export interface SaveData {
     burning: number | null;
     wrecked: boolean;
   }[];
-  pickups: { respawn: number }[];
+  /** Map pickups plus any loot dropped during play; the extra ones are recreated on load. */
+  pickups: SavedPickup[];
   /** null means unlimited ammo: JSON turns Infinity into null. */
   ammo: Partial<Record<WeaponId, number | null>>;
   current: WeaponId;
@@ -45,12 +54,14 @@ export function loadSave(carCount: number, pickupCount: number): SaveData | null
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const save = JSON.parse(raw) as SaveData;
-    if (save.version !== VERSION || save.cars?.length !== carCount || save.pickups?.length !== pickupCount) return null;
+    // Loot dropped during the saved run can leave more pickups than the map has.
+    if (save.version !== VERSION || save.cars?.length !== carCount || save.pickups?.length < pickupCount) return null;
     if (!save.ammo || typeof save.ammo !== 'object' || !isWeaponId(save.current)) return null;
     const p = save.player;
     if (!p || !finite(p.x) || !finite(p.y) || !finite(p.a) || !finite(p.health) || !finite(p.stride)) return null;
     if (p.car !== null && (!Number.isInteger(p.car) || p.car < 0 || p.car >= carCount)) return null;
     if (!save.cars.every((c) => c && finite(c.x) && finite(c.y) && finite(c.a))) return null;
+    if (!save.pickups.every((k) => k && finite(k.x) && finite(k.y))) return null;
     return save;
   } catch {
     return null; // storage disabled, or the JSON is junk
