@@ -17,7 +17,7 @@ export function createPlayer(x: number, y: number, a: number): Player {
   return { x, y, a, r: PLAYER.radius, car: null, stride: 0 };
 }
 
-const bodyHitsWorld = (world: SolidQuery, x: number, y: number, r: number) =>
+export const bodyHitsWorld = (world: SolidQuery, x: number, y: number, r: number) =>
   world.solidAt(x - r, y - r) || world.solidAt(x + r, y - r) || world.solidAt(x - r, y + r) || world.solidAt(x + r, y + r);
 
 function overlapsCar(cars: readonly Car[], x: number, y: number, pad: number): boolean {
@@ -47,6 +47,11 @@ export function stepOnFoot(p: Player, dt: number, input: Input, world: SolidQuer
   if (!bodyHitsWorld(world, nx, p.y, p.r)) p.x = nx;
   if (!bodyHitsWorld(world, p.x, ny, p.r)) p.y = ny;
 
+  pushOutOfCars(p, world, cars);
+}
+
+/** Cars shove a round body (player or pedestrian) out of the way, unless that would push it into a wall. */
+export function pushOutOfCars(p: { x: number; y: number; readonly r: number }, world: SolidQuery, cars: readonly Car[]): void {
   for (const c of cars) {
     const [lx, ly] = toCarLocal(c, p.x, p.y);
     const px = c.hl + p.r - Math.abs(lx), py = c.hw + p.r - Math.abs(ly);

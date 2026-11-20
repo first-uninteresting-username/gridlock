@@ -22,4 +22,16 @@ export interface SolidQuery {
   solidAt(x: number, y: number): boolean;
 }
 
+/** The ground a point is on, for things that care what they stand on (pedestrians stay off buildings). */
+export type GroundKind = 'road' | 'sidewalk' | 'grass' | 'building';
+
+/** A tile grid the simulation can walk around on. */
+export interface World extends SolidQuery {
+  readonly cols: number;
+  readonly rows: number;
+  readonly tileSize: number;
+  /** Ground at a world point; null off the map or on an empty cell. */
+  kindAt(x: number, y: number): GroundKind | null;
+}
+
 export const NO_INPUT: Input = { throttle: 0, steer: 0, handbrake: false, fire: false, aim: null, moveX: 0, moveY: 0 };
