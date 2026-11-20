@@ -41,12 +41,20 @@ export const PED_BODY_ART: PixelMap = [
   '.SDS.',
 ];
 
-/** Hair covers the back of the head (left), skin shows at the front. */
+/** Hair covers the back of the head (left), skin shows at the front. Also used for seated drivers. */
 export const PED_HEAD_ART: PixelMap = [
   '.hs.',
   'hhss',
   'hhss',
   '.hs.',
+];
+
+/** A seated driver's shoulders, seen from above; tinted to the shirt colour. */
+export const DRIVER_BODY_ART: PixelMap = [
+  '.WWW.',
+  'WWWWW',
+  'WWWWW',
+  '.SDS.',
 ];
 
 export const GUN_PISTOL_ART: PixelMap = [

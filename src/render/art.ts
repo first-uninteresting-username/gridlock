@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { CAR_MODELS, CAR_MODEL_IDS, type CarModelId } from '../sim/models';
 import { CAR_ART } from './pixelart/cars';
-import { GUN_PISTOL_ART, GUN_SMG_ART, PED_BODY_ART, PED_HEAD_ART, PLAYER_BODY_ART, PLAYER_FOOT_ART, PLAYER_HEAD_ART } from './pixelart/people';
+import { DRIVER_BODY_ART, GUN_PISTOL_ART, GUN_SMG_ART, PED_BODY_ART, PED_HEAD_ART, PLAYER_BODY_ART, PLAYER_FOOT_ART, PLAYER_HEAD_ART } from './pixelart/people';
 import { mapHeight, mapWidth, paintPixelMap, type PixelMap } from './pixelart/pixelMap';
 import { BLOOD_ART, CASH_ART, PICKUP_ART, WHEEL_ART } from './pixelart/props';
 
@@ -22,6 +22,7 @@ const FIXED_SPRITES = {
   'gun-smg': GUN_SMG_ART,
   'ped-body': PED_BODY_ART,
   'ped-head': PED_HEAD_ART,
+  'driver-body': DRIVER_BODY_ART,
   'ped-blood': BLOOD_ART,
   pickup: PICKUP_ART,
   cash: CASH_ART,

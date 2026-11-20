@@ -42,6 +42,11 @@ export const PICKUP = {
   respawn: 30,
 } as const;
 
+export const DRIVER = {
+  /** Share of parked cars that start with someone in the driver's seat. */
+  spawnChance: 0.6,
+} as const;
+
 export const PED = {
   radius: 7,
   /** How many pedestrians the city keeps alive. */
