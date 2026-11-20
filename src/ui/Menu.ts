@@ -1,4 +1,4 @@
-/** Pause menu overlay (controls and settings). DOM-based, like the HUD. */
+/** Pause menu overlay (controls and settings). DOM-based; the in-game HUD is drawn in the canvas. */
 export class Menu {
   private readonly root = document.getElementById('menu')!;
   private readonly aimBox = document.getElementById('opt-mouse-aim') as HTMLInputElement;
