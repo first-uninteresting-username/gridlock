@@ -7,7 +7,7 @@ import { PickupView } from '../render/PickupView';
 import { PlayerView } from '../render/PlayerView';
 import { carSpeed, createCar } from '../sim/car';
 import { createPlayer } from '../sim/player';
-import { Simulation, type Pickup } from '../sim/Simulation';
+import { MAX_WANTED, Simulation, type Pickup } from '../sim/Simulation';
 import { WEAPONS } from '../sim/weapons';
 import { CAR, KMH_PER_PX } from '../sim/tuning';
 import type { Input } from '../sim/types';
@@ -129,6 +129,7 @@ export class GameScene extends Phaser.Scene {
     this.effects.update(frame, this.sim.cars, this.sim.bullets);
     this.buildings.draw(this.rig.x, this.rig.y, this.cameras.main.worldView);
     const ars = this.sim.arsenal, ammo = ars.ammo[ars.current] ?? 0;
+    this.hud.setWanted(this.sim.wanted, MAX_WANTED);
     this.hud.setStatus(car
       ? `Driving · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
       : `On foot · ${WEAPONS[ars.current].name} ${ammo === Infinity ? '∞' : ammo}`);
