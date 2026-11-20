@@ -1,3 +1,4 @@
+import type { Driver } from './driver';
 import { CAR_MODELS, type CarModel } from './models';
 import { CAR } from './tuning';
 import type { Input, SolidQuery } from './types';
@@ -22,12 +23,17 @@ export interface Car {
   burning: number | null;
   /** Burnt-out shell: cannot be entered or driven. */
   wrecked: boolean;
+  /** Who is in the driver's seat, or null for an empty car. */
+  driver: Driver | null;
 }
 
-export function createCar(x: number, y: number, a: number, color: number, model: CarModel = CAR_MODELS.sedan): Car {
+export function createCar(
+  x: number, y: number, a: number, color: number,
+  model: CarModel = CAR_MODELS.sedan, driver: Driver | null = null,
+): Car {
   return {
     x, y, a, vx: 0, vy: 0, model, hl: model.halfLength, hw: model.halfWidth, color,
-    health: model.health, maxHealth: model.health, steer: 0, burning: null, wrecked: false,
+    health: model.health, maxHealth: model.health, steer: 0, burning: null, wrecked: false, driver,
   };
 }
 

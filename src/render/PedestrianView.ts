@@ -1,9 +1,7 @@
 import Phaser from 'phaser';
 import type { Pedestrian } from '../sim/pedestrian';
 import { addSprite } from './art';
-
-/** Shirt colours, indexed by `Pedestrian.look`. */
-const SHIRTS = [0xc0392b, 0x2e86de, 0xf1c40f, 0x27ae60, 0xecf0f1, 0x8e44ad, 0xe67e22, 0x7f8c8d];
+import { shirtColor } from './looks';
 
 const DEPTH_ALIVE = 2.5; // above cars, below the player
 const DEPTH_DEAD = 0.7; // lying on the ground, under everything that moves
@@ -33,7 +31,7 @@ export class PedestrianView {
 
   sync(): void {
     const p = this.ped;
-    if (p.look !== this.look) { this.look = p.look; this.body.setTint(SHIRTS[p.look % SHIRTS.length]); }
+    if (p.look !== this.look) { this.look = p.look; this.body.setTint(shirtColor(p.look)); }
     const dead = p.state === 'dead';
     if (dead !== this.dead) {
       this.dead = dead;

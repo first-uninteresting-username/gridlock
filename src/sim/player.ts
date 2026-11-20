@@ -30,19 +30,22 @@ function overlapsCar(cars: readonly Car[], x: number, y: number, pad: number): b
  */
 export function stepOnFoot(p: Player, dt: number, input: Input, world: SolidQuery, cars: readonly Car[]): void {
   let vx: number, vy: number;
+  // Sprint applies to forward motion only: reversing stays at the normal back speed.
+  const sprinting = input.sprint && (input.aim !== null || input.throttle > 0);
+  const speed = sprinting ? PLAYER.sprintSpeed : PLAYER.walkSpeed;
   if (input.aim !== null) {
     p.a = input.aim;
     const len = Math.hypot(input.moveX, input.moveY);
-    const k = len > 0 ? PLAYER.walkSpeed / Math.max(len, 1) : 0;
+    const k = len > 0 ? speed / Math.max(len, 1) : 0;
     vx = input.moveX * k;
     vy = input.moveY * k;
   } else {
     p.a += input.steer * PLAYER.turnRate * dt;
-    const speed = input.throttle > 0 ? PLAYER.walkSpeed : input.throttle < 0 ? -PLAYER.backSpeed : 0;
-    vx = Math.cos(p.a) * speed;
-    vy = Math.sin(p.a) * speed;
+    const forward = input.throttle > 0 ? speed : input.throttle < 0 ? -PLAYER.backSpeed : 0;
+    vx = Math.cos(p.a) * forward;
+    vy = Math.sin(p.a) * forward;
   }
-  if (vx || vy) p.stride += dt * 12;
+  if (vx || vy) p.stride += dt * 12 * (sprinting ? PLAYER.sprintSpeed / PLAYER.walkSpeed : 1);
   const nx = p.x + vx * dt, ny = p.y + vy * dt;
   if (!bodyHitsWorld(world, nx, p.y, p.r)) p.x = nx;
   if (!bodyHitsWorld(world, p.x, ny, p.r)) p.y = ny;
