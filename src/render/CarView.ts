@@ -52,13 +52,12 @@ export class CarView {
   }
 
   private drawBody(): void {
-    if (this.car.wrecked) {
-      setSprite(this.body, carSprite(this.car.model.id, 'wrecked')).clearTint();
-      this.trim.setVisible(false);
-    } else {
-      setSprite(this.body, carSprite(this.car.model.id, 'body')).setTint(this.car.color);
-      this.trim.setVisible(true);
-    }
+    const part = this.car.wrecked ? 'wrecked' : 'body';
+    setSprite(this.body, carSprite(this.car.model.id, part));
+    setSprite(this.shadow, carSprite(this.car.model.id, part)).setTint(0x000000);
+    if (this.car.wrecked) this.body.clearTint();
+    else this.body.setTint(this.car.color);
+    this.trim.setVisible(!this.car.wrecked);
   }
 
   sync(): void {

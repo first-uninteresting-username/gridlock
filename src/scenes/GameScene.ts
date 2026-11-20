@@ -35,7 +35,7 @@ export class GameScene extends Phaser.Scene {
   private rig!: CameraRig;
   private hud!: Hud;
   private tooltip!: InteractionTooltip;
-  private menu = new Menu();
+  private menu!: Menu;
   /** Mouse aim only takes over once the pointer has actually moved, so keyboard-only play still works. */
   private pointerSeen = false;
   private keys!: Keys;
@@ -76,12 +76,14 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setBackgroundColor('#0d0f12');
     this.hud = new Hud(this);
+    this.menu = new Menu(this);
     this.rig = new CameraRig(cam, data.player.x, data.player.y);
     this.scale.on('resize', (size: Phaser.Structs.Size) => cam.setSize(size.width, size.height));
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT') as Keys;
-    const toggle = (e: KeyboardEvent) => { if (!e.repeat) this.wantToggle = true; };
+    // No capture: the DOM pause menu needs these keys for its own focus navigation.
+    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT', false) as Keys;
+    const toggle = (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantToggle = true; };
     kb.on('keydown-E', toggle);
     kb.on('keydown-F', toggle);
     kb.on('keydown-ENTER', toggle);
@@ -138,6 +140,7 @@ export class GameScene extends Phaser.Scene {
         const d = Math.hypot(e.x - this.rig.x, e.y - this.rig.y);
         if (d < 900) this.cameras.main.shake(350, 0.012 * (1 - d / 900));
       }
+      if (e.type === 'busted' || e.type === 'playerDown') this.cameras.main.shake(250, 0.008);
     }
     this.sim.events.length = 0;
 
@@ -162,5 +165,6 @@ export class GameScene extends Phaser.Scene {
       ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
       : `On foot · ${WEAPONS[ars.current].name} ${ammo === Infinity ? '∞' : ammo}`);
     this.hud.sync();
+    this.menu.sync();
   }
 }

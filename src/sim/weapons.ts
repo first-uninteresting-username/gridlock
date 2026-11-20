@@ -41,4 +41,6 @@ export interface Bullet {
   travelled: number;
   readonly range: number;
   readonly damage: number;
+  /** Who fired it: police rounds hurt the player, player rounds hurt everyone else. */
+  readonly from: 'player' | 'police';
 }
