@@ -24,7 +24,7 @@ Node comes from the Nix dev shell (pinned to the same nixpkgs as NixOS-config):
 nix develop            # or prefix commands: nix develop -c npm run dev
 npm install
 npm run dev            # http://localhost:5173 with hot reload
-npm run check          # typecheck + tests
+npm run check          # typecheck
 npm run build          # static site in dist/ (open via any static file server)
 ```
 
@@ -47,7 +47,6 @@ public/
 tools/
   gen-city.mjs    Generates the starter city map and tileset.
   ink-plugin.ts   Vite plugin that compiles .ink files at build time.
-tests/            Vitest: simulation, map sanity, story compilation.
 ```
 
 ## Editing the city
