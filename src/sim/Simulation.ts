@@ -99,6 +99,11 @@ export class Simulation {
       const n = this.arsenal.ammo[id];
       if (n !== undefined) ammo[id] = n === Infinity ? null : n;
     }
+    const loaded: SaveData['loaded'] = {};
+    for (const id of WEAPON_ORDER) {
+      const n = ars.loaded[id];
+      if (n !== undefined) loaded[id] = n;
+    }
     return newSave({
       player: {
         x: p.x, y: p.y, a: p.a, health: p.health, stride: p.stride,
@@ -110,6 +115,8 @@ export class Simulation {
       })),
       pickups: this.pickups.map((k) => ({ ...k, respawn: k.respawn === Infinity ? null : k.respawn })),
       ammo,
+      loaded,
+      reload: ars.reload,
       weapons: [ars.weapons[0], ars.weapons[1], ars.weapons[2], ars.weapons[3]],
       weaponSlot: ars.weaponSlot,
       gadgets: [ars.gadgets[0], ars.gadgets[1]],
@@ -146,6 +153,17 @@ export class Simulation {
       if (n === null) ars.ammo[id] = Infinity;
       else if (n !== undefined) ars.ammo[id] = n;
     }
+    ars.loaded = {};
+    if (save.loaded) {
+      for (const id of WEAPON_ORDER) {
+        const n = save.loaded[id];
+        if (n !== undefined) ars.loaded[id] = n;
+      }
+    } else {
+      // Saves written before magazines existed still have reserve ammo; load each gun from that.
+      for (const id of WEAPON_ORDER) this.loadMagazine(id);
+    }
+    ars.reload = save.reload ?? 0;
     ars.weapons = [save.weapons[0], save.weapons[1], save.weapons[2], save.weapons[3]];
     ars.weaponSlot = save.weaponSlot;
     ars.gadgets = [save.gadgets[0], save.gadgets[1]];
@@ -291,6 +309,34 @@ export class Simulation {
     }
   }
 
+  /** Move as many rounds as will fit from reserve into a gun's magazine. */
+  private loadMagazine(w: WeaponId): void {
+    const def = WEAPONS[w];
+    if (def.kind !== 'gun') return;
+    const ars = this.arsenal;
+    const rounds = Math.min(def.magazineSize - (ars.loaded[w] ?? 0), ars.ammo[w] ?? 0);
+    if (rounds <= 0) return;
+    ars.loaded[w] = (ars.loaded[w] ?? 0) + rounds;
+    if (ars.ammo[w] !== Infinity) ars.ammo[w] = (ars.ammo[w] ?? 0) - rounds;
+  }
+
+  /** Start refilling the current weapon's magazine. Returns false if there is nothing to reload. */
+  reload(): boolean {
+    const ars = this.arsenal;
+    const id = slotWeapon(ars.weapons, ars.weaponSlot);
+    const def = WEAPONS[id];
+    if (def.kind !== 'gun' || ars.reload > 0) return false;
+    if ((ars.loaded[id] ?? 0) >= def.magazineSize || (ars.ammo[id] ?? 0) <= 0) return false;
+    ars.reload = def.reloadTime;
+    return true;
+  }
+
+  private finishReload(): void {
+    const ars = this.arsenal;
+    this.loadMagazine(slotWeapon(ars.weapons, ars.weaponSlot));
+    ars.reload = 0;
+  }
+
   /** Step a slot index in `dir`, wrapping at both ends. */
   private moveSlot(from: number, dir: -1 | 1, count: number): number {
     return (((from + dir) % count) + count) % count;
@@ -306,12 +352,14 @@ export class Simulation {
   cycleWeapon(dir: -1 | 1): void {
     const ars = this.arsenal;
     ars.weaponSlot = this.moveSlot(ars.weaponSlot, dir, ars.weapons.length);
+    ars.reload = 0; // changing weapons abandons a reload in progress
     this.resetTrigger();
   }
 
   selectWeaponSlot(slot: number): void {
     if (slot < 0 || slot >= this.arsenal.weapons.length) return;
     this.arsenal.weaponSlot = slot;
+    this.arsenal.reload = 0;
     this.resetTrigger();
   }
 
@@ -548,16 +596,34 @@ export class Simulation {
   private stepTrigger(dt: number, input: Input): void {
     const ars = this.arsenal, p = this.player;
     ars.cooldown = Math.max(0, ars.cooldown - dt);
+    if (ars.reload > 0) {
+      // Keep tracking the trigger so a held semi-auto shot is not banked during the reload.
+      ars.reload -= dt;
+      ars.triggerHeld = input.fire;
+      if (ars.reload <= 0) this.finishReload();
+      return;
+    }
     const w = WEAPONS[slotWeapon(ars.weapons, ars.weaponSlot)];
     // Melee swings, like automatic guns, keep going while the button is held.
     const wantsAttack = input.fire && (w.kind === 'melee' || w.auto || !ars.triggerHeld);
     ars.triggerHeld = input.fire;
     // You can lean out of a car and shoot, but not punch or stab from one.
-    if ((p.car !== null && w.kind === 'melee') || !wantsAttack || ars.cooldown > 0 || (ars.ammo[w.id] ?? 0) <= 0) return;
+    if ((p.car !== null && w.kind === 'melee') || !wantsAttack || ars.cooldown > 0) return;
+    if (w.kind === 'gun') {
+      if ((ars.loaded[w.id] ?? 0) <= 0) {
+        // Pulling the trigger on an empty magazine starts a reload if reserve rounds remain.
+        this.reload();
+        return;
+      }
+    } else if ((ars.ammo[w.id] ?? 0) <= 0) return;
 
     ars.cooldown = w.interval;
-    ars.ammo[w.id] = (ars.ammo[w.id] ?? 0) - 1;
-    if (w.kind === 'melee') { this.meleeAttack(w); return; }
+    if (w.kind === 'melee') {
+      ars.ammo[w.id] = (ars.ammo[w.id] ?? 0) - 1;
+      this.meleeAttack(w);
+      return;
+    }
+    ars.loaded[w.id] = (ars.loaded[w.id] ?? 0) - 1;
 
     // On foot you face where you shoot; from a car you aim with the mouse, or along the car's heading.
     const aim = p.car ? (input.aim ?? p.a) : p.a;
@@ -574,6 +640,7 @@ export class Simulation {
     this.events.push({ type: 'shot', x, y, a, weapon: w.id });
     if (this.wanted === 0) this.raiseWanted(1); // gunfire alone is enough to get the police's attention
     this.scarePedestrians(p.x, p.y, PED.gunScareRange);
+    if ((ars.loaded[w.id] ?? 0) === 0) this.reload(); // top up as soon as the last round leaves
   }
 
   /** A swing hits every living pedestrian inside a short arc in front of the player. */
@@ -663,6 +730,7 @@ export class Simulation {
   /** Put a picked-up weapon in a free slot (or replace the selected one when all are full). */
   private giveWeapon(weapon: WeaponId, ammo: number): void {
     const ars = this.arsenal;
+    const isNew = !ars.weapons.includes(weapon);
     ars.ammo[weapon] = (ars.ammo[weapon] ?? 0) + ammo;
     let slot = ars.weapons.indexOf(weapon);
     if (slot < 0) {
@@ -670,7 +738,10 @@ export class Simulation {
       if (slot < 0) slot = ars.weaponSlot;
       ars.weapons[slot] = weapon;
     }
+    if (ars.weaponSlot !== slot) ars.reload = 0;
     ars.weaponSlot = slot;
     this.resetTrigger();
+    // A newly found gun is ready to fire; the rest of the pickup stays in reserve.
+    if (isNew && WEAPONS[weapon].kind === 'gun') this.loadMagazine(weapon);
   }
 }

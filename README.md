@@ -27,6 +27,7 @@ SMG ammo.
 | Ctrl + wheel / 1 2 | Cycle or select a gadget slot (gadgets have no behaviour yet) |
 | Right click | Use the selected gadget (not implemented yet) |
 | E / Enter | Get into the nearest car, or get out |
+| R | Reload the current gun |
 | F | General action: rob a nearby pedestrian (not police; a prompt appears when one is close enough), otherwise get in/out of the nearest car |
 | Esc | Menu: controls, settings and Save game (pauses the game) |
 
@@ -42,6 +43,10 @@ The HUD strip at the top left shows the four weapon slots and two empty gadget s
 slot is gold. All weapon slots start empty, and an empty slot means fists. A weapon pickup fills
 the first free slot and selects it (or replaces the selected slot when all four are full); SMG ammo
 comes from pickups.
+
+Guns hold a magazine of rounds. Press R to refill it from your reserve, or let an empty magazine
+reload on its own when you pull the trigger; switching weapon slots cancels a reload. The HUD shows
+loaded/reserve rounds, and says `RELOADING` while a magazine is being refilled.
 
 ## Development
 

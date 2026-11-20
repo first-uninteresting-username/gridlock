@@ -39,6 +39,10 @@ export interface SaveData {
   pickups: SavedPickup[];
   /** null means unlimited ammo: JSON turns Infinity into null. */
   ammo: Partial<Record<WeaponId, number | null>>;
+  /** Rounds in each magazine; absent in older version-2 saves, which refill from reserve on load. */
+  loaded?: Partial<Record<WeaponId, number>>;
+  /** Seconds left in a reload; absent in older version-2 saves. */
+  reload?: number;
   weapons: WeaponSlots;
   weaponSlot: number;
   gadgets: GadgetSlots;
