@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FONT_ADVANCE, glyphKey } from '../render/pixelart/font';
+import { PixelText, SHADOW_COLOR } from './PixelText';
 
 /** Screen-space pixel-art HUD: bitmap text, wanted stars and a cash icon, drawn by the game camera. */
 const PAD = 8;
@@ -13,47 +13,8 @@ const CASH_TEXT_X = COIN_SIZE + 2;
 
 const TEXT_COLOR = 0xeeeeee;
 const CASH_COLOR = 0x6fdc8c;
-const SHADOW_COLOR = 0x0d0f12;
 
 type Star = { shadow: Phaser.GameObjects.Image; on: Phaser.GameObjects.Image; off: Phaser.GameObjects.Image };
-
-/** One line of tinted bitmap glyphs with a 1px dark shadow, so text reads over the busy street. */
-class PixelText {
-  private readonly shadow: Phaser.GameObjects.Image[] = [];
-  private readonly main: Phaser.GameObjects.Image[] = [];
-  private value = '';
-
-  constructor(
-    private readonly scene: Phaser.Scene,
-    private readonly layer: Phaser.GameObjects.Container,
-    private readonly x: number,
-    private readonly y: number,
-    private readonly color: number,
-  ) {}
-
-  set(text: string): void {
-    const next = text.toUpperCase();
-    if (next === this.value) return;
-    this.value = next;
-    for (let i = 0; i < next.length; i++) {
-      if (!this.main[i]) {
-        const s = this.scene.add.image(0, 0, glyphKey(' ')).setTint(SHADOW_COLOR);
-        const m = this.scene.add.image(0, 0, glyphKey(' ')).setTint(this.color);
-        this.shadow[i] = s;
-        this.main[i] = m;
-        this.layer.add([s, m]);
-      }
-      const key = glyphKey(next[i]);
-      const x = this.x + i * FONT_ADVANCE;
-      this.shadow[i].setTexture(key).setPosition(x + 1, this.y + 1).setVisible(true);
-      this.main[i].setTexture(key).setPosition(x, this.y).setVisible(true);
-    }
-    for (let i = next.length; i < this.main.length; i++) {
-      this.shadow[i].setVisible(false);
-      this.main[i].setVisible(false);
-    }
-  }
-}
 
 export class Hud {
   private readonly root: Phaser.GameObjects.Container;
