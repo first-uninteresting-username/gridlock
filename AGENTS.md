@@ -8,6 +8,28 @@
   has none). Verify changes with `npm run check` and by running the game instead.
 - Do not add `Co-Authored-By` trailers (or any other AI attribution) to commit messages or PRs.
 
+## Code maintainability
+
+- Write code a future agent or human can change safely. Prefer simple, readable code over clever
+  code, and keep changes focused on what the task needs.
+- Follow the existing structure: put code in the module that owns that concern (`sim`, `world`,
+  `render`, `scenes`, `ui`, `story`) and match the surrounding naming and style before inventing
+  new patterns.
+- Keep simulation logic separate from rendering and input so it can be reasoned about on its own.
+  Do not reach into Phaser objects from `sim` code.
+- Keep files and functions small and single-purpose. Split a function or file when it starts doing
+  more than one job.
+- Name things for what they mean. Replace magic numbers and repeated literals with named constants,
+  and keep tunable game values in one obvious place instead of scattering them.
+- Do not duplicate logic. Reuse or extend an existing helper; extract a shared one when the same
+  code appears a third time.
+- Use precise TypeScript types. Avoid `any` and unchecked casts, and let `npm run check` pass
+  cleanly.
+- Comment the *why* (constraints, trade-offs, non-obvious decisions), not the *what*. Delete dead
+  code and commented-out code rather than leaving it behind.
+- Leave the code better than you found it, but do not make unrelated refactors inside a feature or
+  fix; do them in a separate change.
+
 ## Art
 
 - All art must be SVG: sprites, tiles, icons, textures. Do not add raster images (PNG, JPG, GIF,
