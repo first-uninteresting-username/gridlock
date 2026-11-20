@@ -14,6 +14,12 @@ export const CAR = {
 
 export const PLAYER = {
   radius: 9,
+  /** Health lost to blasts and fast cars; at zero the last save is restored. */
+  health: 100,
+  /** A car slower than this only shoves the player aside. */
+  carHitSpeed: 140,
+  /** Health lost per second per px/s above `carHitSpeed` while a car drives through the player. */
+  carHitDamage: 1.5,
   walkSpeed: 160,
   /** Forward speed while sprinting (Shift held). */
   sprintSpeed: 280,

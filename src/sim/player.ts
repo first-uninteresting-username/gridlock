@@ -11,10 +11,12 @@ export interface Player {
   car: Car | null;
   /** Walk-cycle phase, advanced while moving. */
   stride: number;
+  /** Reaching zero means the player is killed and the game restores the last save. */
+  health: number;
 }
 
 export function createPlayer(x: number, y: number, a: number): Player {
-  return { x, y, a, r: PLAYER.radius, car: null, stride: 0 };
+  return { x, y, a, r: PLAYER.radius, car: null, stride: 0, health: PLAYER.health };
 }
 
 export const bodyHitsWorld = (world: SolidQuery, x: number, y: number, r: number) =>

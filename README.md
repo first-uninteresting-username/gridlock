@@ -19,7 +19,15 @@ cars, and can be shot or run over. You can also lean out of a car window and sho
 | Left click / Space | Shoot. In a car, left click shoots toward the mouse; Space is the handbrake |
 | E / F / Enter | Get into the nearest car, or get out |
 | Q | Switch weapon |
-| Esc | Menu: controls and settings (pauses the game) |
+| Esc | Menu: controls, settings and Save game (pauses the game) |
+
+## Saving
+
+The game saves itself when it starts, and you can save again from the menu with **Save game**.
+Saves live in the browser's local storage, so they survive a reload. Blasts and fast cars can kill
+you; when your health reaches zero you return to the last save with the cash, weapons, wanted level
+and car damage you had when you saved. There is always a save to return to, even if you never saved
+manually.
 
 ## Development
 

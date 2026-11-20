@@ -9,6 +9,7 @@ import { PlayerView } from '../render/PlayerView';
 import { carSpeed, createCar } from '../sim/car';
 import { createDriver } from '../sim/driver';
 import { createPlayer } from '../sim/player';
+import { loadSave, storeSave, type SaveData } from '../sim/save';
 import { MAX_WANTED, Simulation, type Pickup } from '../sim/Simulation';
 import { WEAPONS } from '../sim/weapons';
 import { CAR_MODELS } from '../sim/models';
@@ -34,6 +35,10 @@ export class GameScene extends Phaser.Scene {
   private rig!: CameraRig;
   private hud!: Hud;
   private menu = new Menu();
+  /** The last saved run; death puts the live objects back into this state. */
+  private save!: SaveData;
+  /** Game-clock time until which the death message replaces the status line. */
+  private noticeUntil = 0;
   /** Mouse aim only takes over once the pointer has actually moved, so keyboard-only play still works. */
   private pointerSeen = false;
   private keys!: Keys;
@@ -60,6 +65,10 @@ export class GameScene extends Phaser.Scene {
     const pickups: Pickup[] = data.pickups.map((k) => ({ ...k, respawn: 0 }));
     this.sim = new Simulation(data.city, createPlayer(data.player.x, data.player.y, data.player.a), cars, pickups);
     this.sim.populate(PED.count);
+    // Restoring writes into the same objects the views hold, so it can happen before they exist.
+    const saved = loadSave(cars.length, pickups.length);
+    if (saved) { this.sim.restore(saved); this.save = saved; }
+    else { this.save = this.sim.snapshot(); storeSave(this.save); }
     this.pedViews = this.sim.pedestrians.map((p) => new PedestrianView(this, p));
     this.carViews = cars.map((c) => new CarView(this, c));
     this.pickupViews = pickups.map((k) => new PickupView(this, k));
@@ -72,7 +81,7 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setBackgroundColor('#0d0f12');
     this.hud = new Hud(this);
-    this.rig = new CameraRig(cam, data.player.x, data.player.y);
+    this.rig = new CameraRig(cam, this.sim.player.x, this.sim.player.y);
     this.scale.on('resize', (size: Phaser.Structs.Size) => cam.setSize(size.width, size.height));
 
     const kb = this.input.keyboard!;
@@ -89,6 +98,7 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointerdown', () => { this.pointerSeen = true; });
     // Drop held buttons/keys when the menu opens so nothing is stuck on resume.
     this.menu.onToggle = (open) => { if (open) { this.wantToggle = false; this.acc = 0; } };
+    this.menu.onSave = () => { this.save = this.sim.snapshot(); storeSave(this.save); };
   }
 
   private readInput(): Input {
@@ -123,7 +133,17 @@ export class GameScene extends Phaser.Scene {
       if (this.wantToggle) { this.wantToggle = false; this.sim.toggleCar(); }
       const input = this.readInput();
       this.acc += frame;
-      while (this.acc >= STEP) { this.sim.step(STEP, input); this.acc -= STEP; }
+      while (this.acc >= STEP) {
+        this.sim.step(STEP, input);
+        this.acc -= STEP;
+        if (this.sim.player.health <= 0) {
+          this.sim.restore(this.save);
+          this.noticeUntil = time + 2500;
+          this.cameras.main.flash(300, 90, 0, 0);
+          this.acc = 0; // no catch-up steps from the moment of death
+          break;
+        }
+      }
     }
 
     for (const e of this.sim.events) {
@@ -147,9 +167,10 @@ export class GameScene extends Phaser.Scene {
     const ars = this.sim.arsenal, ammo = ars.ammo[ars.current] ?? 0;
     this.hud.setWanted(this.sim.wanted, MAX_WANTED);
     this.hud.setCash(this.sim.cash);
-    this.hud.setStatus(car
+    const status = car
       ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
-      : `On foot · ${WEAPONS[ars.current].name} ${ammo === Infinity ? '∞' : ammo}`);
+      : `On foot · ${WEAPONS[ars.current].name} ${ammo === Infinity ? '∞' : ammo}`;
+    this.hud.setStatus(time < this.noticeUntil ? 'KILLED! BACK AT LAST SAVE' : status);
     this.hud.sync();
   }
 }
