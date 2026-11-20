@@ -7,11 +7,12 @@ Current scope is deliberately minimal: walking, entering and leaving cars, arcad
 handbrake drift, car-to-car and wall collisions, fake-3D buildings, and guns and melee weapons. Shot cars smoke,
 catch fire and explode, and the blast can set off nearby cars. Pedestrians (on foot only, there is
 no AI traffic) wander the sidewalks and cross streets; they run from gunfire, explosions and fast
-cars, and can be shot or run over. You can rob them at close range: victims drop cash (and
-occasionally ammo), and witnesses may raise the wanted level. You can also lean out of a car window
-and shoot while driving. Gunfire and kills raise wanted too, and some pedestrians are police: at
-1-3 stars they try to arrest you, at 4-5 they shoot instead. Being busted or shot down costs $100
-and sends you back to the start. Killed officers drop SMG ammo.
+cars, and can be shot or run over. You can rob them at close range, except police officers, who
+can't be robbed: victims drop cash (and occasionally ammo), and witnesses may raise the wanted level.
+You can also lean out of a car window and shoot while driving. Gunfire and kills raise wanted too,
+and some pedestrians are police. Once wanted, officers shoot on sight and only resort to an arrest
+when they can't get a clear shot; they don't flinch at incoming fire. Being busted or shot down costs
+$100 and sends you back to the start. Killed officers drop SMG ammo.
 
 ## Controls
 
@@ -25,7 +26,7 @@ and sends you back to the start. Killed officers drop SMG ammo.
 | Ctrl + wheel / 1 2 | Cycle or select a gadget slot (gadgets have no behaviour yet) |
 | Right click | Use the selected gadget (not implemented yet) |
 | E / F / Enter | Get into the nearest car, or get out |
-| R | Rob a nearby pedestrian (a prompt appears when one is close enough) |
+| R | Rob a nearby pedestrian (not police; a prompt appears when one is close enough) |
 | Esc | Menu: controls and settings (pauses the game) |
 
 The HUD strip at the top left shows the four weapon slots and two empty gadget slots; the selected
