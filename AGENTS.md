@@ -14,6 +14,6 @@
   WebP, etc.), and do not generate raster files from tools.
 - Sprite SVGs live in `public/art/` and are listed in `src/render/art.ts`, which loads them with
   `load.svg` at 4x their world size so they stay sharp when the camera zooms in. The tileset is
-  generated as `public/tiles/city.svg` by `tools/gen-city.mjs`.
+  generated as `public/tiles/city.svg` by `tools/gen-tileset.mjs`.
 - Shapes that are computed every frame (building lean, bullet tracers, particles) are drawn with
   Phaser Graphics in code. They are not art assets.
