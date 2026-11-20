@@ -49,6 +49,23 @@ export const PED_HEAD_ART: PixelMap = [
   '.hs.',
 ];
 
+/**
+ * A pedestrian sprawled on the ground, seen from above. Replaces the upright body and head on death:
+ * pale skin and dull, bloodstained clothes read as a corpse rather than a person who merely fell over.
+ * Head to the right, feet to the left, arms flung out top and bottom. Legend: palette.ts.
+ */
+export const CORPSE_ART: PixelMap = [
+  '...........',
+  '.......z...',
+  '.......C...',
+  'ffCCCCCChhh',
+  '..CCCwvChzz',
+  'fCCCCxxxhZz',
+  '.......C...',
+  '.......z...',
+  '...........',
+];
+
 /** A seated driver's shoulders, seen from above; tinted to the shirt colour. */
 export const DRIVER_BODY_ART: PixelMap = [
   '.WWW.',
