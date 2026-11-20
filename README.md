@@ -62,20 +62,28 @@ tools/
 
 ## Editing the city
 
-Open `public/maps/city.tmj` in [Tiled](https://www.mapeditor.org) and paint. The map is entirely
-hand-placed; nothing generates it.
+Open `public/maps/city.tmj` in [Tiled](https://www.mapeditor.org) and paint. Nothing in the repo
+generates the map, so edits made in Tiled are safe.
+
+The city is modelled on [Nowiny](https://pl.wikipedia.org/wiki/Nowiny_(powiat_kielecki)), a village
+near Kielce in Poland, at about 6 m per tile. Its streets, buildings, woods, ponds and the Bobrza river
+were traced once from OpenStreetMap: the Białe Zagłębie housing estate in the middle, Krakowska
+running diagonally along the west side, the Perła pool and GKS Nowiny stadium to the east, and the
+Przemysłowa industrial area to the south-east. Map data © OpenStreetMap contributors, available under
+the [Open Database License](https://www.openstreetmap.org/copyright).
 
 **Terrain, streets and buildings are all tiles**, painted on one tile layer called `tiles`. What a
 tile means comes from its custom properties in the tileset (select a tile in Tiled's Tileset panel):
 
 | Property | Applies to | Meaning |
 |---|---|---|
-| `kind` | every tile | `road`, `sidewalk`, `grass` or `building`. Required. Buildings are solid; everything else can be driven and walked on. |
+| `kind` | every tile | `road`, `sidewalk`, `grass`, `water`, `tree` or `building`. Required. Buildings, water and trees are solid; everything else can be driven and walked on. |
 | `height` | buildings | Roof lean, about 0.1 (low) to 0.4 (tall). |
 | `roof` | buildings | Roof colour. |
 
-The tileset has plain road, road with a centre dash (two orientations), sidewalk and grass, plus
-building tiles in seven roof colours and three heights (the pips on the tile show the height).
+The tileset has plain road, road with a centre dash (two orientations), crosswalks, parking bays, lane
+arrows, sidewalk, grass, water and woodland (tree crowns), plus building tiles in ten roof colours and
+four heights (the pips on the tile show the height).
 A building is just building tiles painted next to each other: tiles of equal height merge into one
 roof, and walls appear wherever a tile borders something lower. An empty (unpainted) cell is
 solid, like the edge of the map.

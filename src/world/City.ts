@@ -1,7 +1,7 @@
-import type { SolidQuery } from '../sim/types';
+import { isSolidKind, type GroundKind, type SolidQuery } from '../sim/types';
 
-export type TileKind = 'road' | 'sidewalk' | 'grass' | 'water' | 'building';
-export const TILE_KINDS: readonly TileKind[] = ['road', 'sidewalk', 'grass', 'water', 'building'];
+export type TileKind = GroundKind;
+export const TILE_KINDS: readonly TileKind[] = ['road', 'sidewalk', 'grass', 'water', 'tree', 'building'];
 
 /** What a tile type means to the game; read from the tile's custom properties in Tiled. */
 export interface TileDef {
@@ -14,8 +14,8 @@ export interface TileDef {
 
 /**
  * The city as a grid of tiles. Each cell holds an index into `defs` (0 = nothing painted), so
- * terrain, streets and buildings all come from the same map layer. Buildings and water are solid,
- * and so is everything outside the map and every unpainted cell.
+ * terrain, streets and buildings all come from the same map layer. Buildings, water and trees are
+ * solid, and so is everything outside the map and every unpainted cell.
  */
 export class City implements SolidQuery {
   readonly width: number;
@@ -54,6 +54,6 @@ export class City implements SolidQuery {
 
   solidAt(x: number, y: number): boolean {
     const t = this.tileAt(x, y);
-    return t === null || t.kind === 'building' || t.kind === 'water';
+    return t === null || isSolidKind(t.kind);
   }
 }
