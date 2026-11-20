@@ -37,6 +37,12 @@ export type SimEvent =
   | { type: 'busted'; x: number; y: number }
   | { type: 'playerDown'; x: number; y: number };
 
+/** The context action the general action key would perform, plus the thing it applies to. */
+export type GeneralAction =
+  | { readonly kind: 'exit'; readonly target: Car }
+  | { readonly kind: 'rob'; readonly target: Pedestrian }
+  | { readonly kind: 'enter'; readonly target: Car };
+
 /** Highest wanted level. */
 export const MAX_WANTED = 5;
 
@@ -206,7 +212,8 @@ export class Simulation {
     if (p.car) return null;
     let best: Pedestrian | null = null, bestDist: number = ROB.reach;
     for (const other of this.pedestrians) {
-      if (other.state === 'dead' || other.robbed) continue;
+      // Officers are never rob targets: mugging a cop should not be an option.
+      if (other.state === 'dead' || other.robbed || other.police) continue;
       const d = Math.hypot(other.x - p.x, other.y - p.y);
       if (d < bestDist) { bestDist = d; best = other; }
     }
@@ -227,6 +234,30 @@ export class Simulation {
     }
     this.dropLoot(victim.x, victim.y);
     return true;
+  }
+
+  /**
+   * What the general action key would do right now. The key and the on-screen prompt both read from
+   * this, so the prompt can never advertise an action the key would not perform.
+   */
+  generalAction(): GeneralAction | null {
+    const p = this.player;
+    if (p.car) return { kind: 'exit', target: p.car };
+    const victim = this.robTarget();
+    if (victim) return { kind: 'rob', target: victim };
+    const car = findCarToEnter(p, this.cars);
+    return car ? { kind: 'enter', target: car } : null;
+  }
+
+  /** Perform the general action for the current context. Returns false when there is nothing to do. */
+  act(): boolean {
+    const action = this.generalAction();
+    if (!action) return false;
+    switch (action.kind) {
+      case 'exit':
+      case 'enter': return this.toggleCar();
+      case 'rob': return this.robNearest();
+    }
   }
 
   /** Victims leave a small cash bundle and, now and then, ammo for a weapon the player can use. */
@@ -409,15 +440,15 @@ export class Simulation {
     }
   }
 
-  /** An officer's arrest or gunfire decision, after it has moved for this step. */
+  /** An officer's gunfire decision, after it has moved for this step. Arrest is a fallback when no shot is possible. */
   private policeAct(p: Pedestrian, dt: number): void {
     p.arrestCooldown = Math.max(0, p.arrestCooldown - dt);
     p.shootCooldown = Math.max(0, p.shootCooldown - dt);
     const dx = this.player.x - p.x, dy = this.player.y - p.y;
     const dist = Math.hypot(dx, dy);
-    if (this.wanted >= POLICE.shootWanted) {
-      if (p.shootCooldown > 0 || dist >= POLICE.shootRange) return;
-      if (!this.lineOfSight(p.x, p.y, this.player.x, this.player.y)) return;
+    // Officers don't hold back from shooting: a clear shot at the player is always taken.
+    if (p.shootCooldown <= 0 && dist < POLICE.shootRange
+      && this.lineOfSight(p.x, p.y, this.player.x, this.player.y)) {
       p.shootCooldown = POLICE.shootInterval;
       const a = Math.atan2(dy, dx) + (this.random() * 2 - 1) * POLICE.spread;
       const x = p.x + Math.cos(a) * 12, y = p.y + Math.sin(a) * 12;
@@ -594,7 +625,8 @@ export class Simulation {
             if (o.state === 'dead' || Math.hypot(o.x - b.x, o.y - b.y) > o.r) continue;
             this.events.push({ type: 'impact', x: b.x, y: b.y, on: 'ped' });
             this.damagePedestrian(o, b.damage, 'bullet', (b.vx / speed) * 40, (b.vy / speed) * 40);
-            panic(o, b.x - b.vx, b.y - b.vy, this.random); // run along the line of fire, away from the shooter
+            // Officers ignore incoming fire and keep closing in; bystanders run along the line of fire.
+            if (!o.police) panic(o, b.x - b.vx, b.y - b.vy, this.random);
             hit = true;
             break;
           }

@@ -3,7 +3,7 @@ import { FONT_ADVANCE, glyphKey } from '../render/pixelart/font';
 import { GADGET_SLOT_COUNT, WEAPON_SLOT_COUNT, type WeaponId } from '../sim/weapons';
 import { PixelText, SHADOW_COLOR } from './PixelText';
 
-/** Screen-space pixel-art HUD: bitmap text, wanted stars and a cash icon, drawn by the game camera. */
+/** Screen-space pixel-art HUD: bitmap text, wanted stars and a cash icon, drawn by the UI scene. */
 const PAD = 8;
 const STATUS_Y = 0;
 const WANTED_Y = 12;
@@ -67,7 +67,7 @@ export class Hud {
 
   constructor(private readonly scene: Phaser.Scene) {
     // scrollFactor(0) multiplies with each child's factor, so everything in this container stays
-    // pinned to the screen; sync() undoes the world camera's zoom to keep one texel one canvas pixel.
+    // pinned to its camera; sync() keeps one texel one canvas pixel.
     this.root = scene.add.container().setScrollFactor(0).setDepth(1000);
     this.status = new PixelText(scene, this.root, 0, STATUS_Y, TEXT_COLOR);
     this.cash = new PixelText(scene, this.root, CASH_TEXT_X, CASH_Y, CASH_COLOR);
@@ -128,7 +128,7 @@ export class Hud {
     this.cash.set(`$${dollars.toLocaleString('en-US')}`);
   }
 
-  /** Re-anchors the HUD after the world camera changes zoom or the canvas resizes. */
+  /** Re-anchors the HUD to the UI camera's top-left corner. */
   sync(): void {
     const cam = this.scene.cameras.main;
     const zoom = cam.zoom;
