@@ -7,6 +7,7 @@ import { PedestrianView } from '../render/PedestrianView';
 import { PickupView } from '../render/PickupView';
 import { PlayerView } from '../render/PlayerView';
 import { carSpeed, createCar } from '../sim/car';
+import { createDriver } from '../sim/driver';
 import { createPlayer } from '../sim/player';
 import { MAX_WANTED, Simulation, type Pickup } from '../sim/Simulation';
 import { WEAPONS } from '../sim/weapons';
@@ -52,7 +53,10 @@ export class GameScene extends Phaser.Scene {
     map.createLayer('tiles', tiles, 0, 0)?.setDepth(0);
     const data = buildCityData(this.cache.tilemap.get('city').data as TiledMap);
 
-    const cars = data.cars.map((s) => createCar(s.x, s.y, s.a, s.color ?? 0xffffff, CAR_MODELS[s.model ?? 'sedan']));
+    const cars = data.cars.map((s) => createCar(
+      s.x, s.y, s.a, s.color ?? 0xffffff, CAR_MODELS[s.model],
+      s.driver === null ? null : createDriver(s.driver),
+    ));
     const pickups: Pickup[] = data.pickups.map((k) => ({ ...k, respawn: 0 }));
     this.sim = new Simulation(data.city, createPlayer(data.player.x, data.player.y, data.player.a), cars, pickups);
     this.sim.populate(PED.count);
