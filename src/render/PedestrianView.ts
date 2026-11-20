@@ -1,19 +1,19 @@
 import Phaser from 'phaser';
 import type { Pedestrian } from '../sim/pedestrian';
 import { addSprite } from './art';
-
-/** Shirt colours, indexed by `Pedestrian.look`. */
-const SHIRTS = [0xc0392b, 0x2e86de, 0xf1c40f, 0x27ae60, 0xecf0f1, 0x8e44ad, 0xe67e22, 0x7f8c8d];
+import { shirtColor } from './looks';
 
 const DEPTH_ALIVE = 2.5; // above cars, below the player
 const DEPTH_DEAD = 0.7; // lying on the ground, under everything that moves
 
-/** A walking pedestrian, or a body and a pool of blood once dead. */
+/** A walking pedestrian, or a sprawled corpse and a pool of blood once dead. */
 export class PedestrianView {
   private readonly root: Phaser.GameObjects.Container;
   private readonly footL: Phaser.GameObjects.Image;
   private readonly footR: Phaser.GameObjects.Image;
   private readonly body: Phaser.GameObjects.Image;
+  private readonly head: Phaser.GameObjects.Image;
+  private readonly corpse: Phaser.GameObjects.Image;
   private readonly blood: Phaser.GameObjects.Image;
   private look = -1;
   private dead = false;
@@ -23,20 +23,26 @@ export class PedestrianView {
     this.footL = addSprite(scene, 'player-foot');
     this.footR = addSprite(scene, 'player-foot');
     this.body = addSprite(scene, 'ped-body');
-    const head = addSprite(scene, 'ped-head', 1, 0);
-    this.root = scene.add.container(0, 0, [this.footL, this.footR, this.body, head]).setDepth(DEPTH_ALIVE);
+    this.head = addSprite(scene, 'ped-head', 1, 0);
+    this.corpse = addSprite(scene, 'ped-corpse').setVisible(false);
+    this.root = scene.add.container(0, 0, [this.footL, this.footR, this.body, this.head, this.corpse]).setDepth(DEPTH_ALIVE);
     this.sync();
   }
 
   sync(): void {
     const p = this.ped;
-    if (p.look !== this.look) { this.look = p.look; this.body.setTint(SHIRTS[p.look % SHIRTS.length]); }
+    if (p.look !== this.look) { this.look = p.look; this.body.setTint(shirtColor(p.look)); }
     const dead = p.state === 'dead';
     if (dead !== this.dead) {
       this.dead = dead;
       this.root.setDepth(dead ? DEPTH_DEAD : DEPTH_ALIVE);
       this.footL.setVisible(!dead);
       this.footR.setVisible(!dead);
+      this.body.setVisible(!dead);
+      this.head.setVisible(!dead);
+      this.corpse.setVisible(dead);
+      // Fall at a stable angle for the spot, a little off the walking direction so bodies don't look posed.
+      if (dead) this.corpse.setRotation(p.x * 0.53 + p.y * 0.29);
       this.blood.setVisible(dead).setRotation(p.x * 0.37 + p.y * 0.11); // any angle, but stable per spot
     }
     this.root.setPosition(p.x, p.y).setRotation(p.a);

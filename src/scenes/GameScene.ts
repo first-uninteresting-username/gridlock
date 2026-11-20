@@ -7,6 +7,7 @@ import { PedestrianView } from '../render/PedestrianView';
 import { PickupView } from '../render/PickupView';
 import { PlayerView } from '../render/PlayerView';
 import { carSpeed, createCar } from '../sim/car';
+import { createDriver } from '../sim/driver';
 import { createPlayer } from '../sim/player';
 import { MAX_WANTED, Simulation, type Pickup } from '../sim/Simulation';
 import { WEAPONS } from '../sim/weapons';
@@ -55,7 +56,10 @@ export class GameScene extends Phaser.Scene {
     map.createLayer('tiles', tiles, 0, 0)?.setDepth(0);
     const data = buildCityData(this.cache.tilemap.get('city').data as TiledMap);
 
-    const cars = data.cars.map((s) => createCar(s.x, s.y, s.a, s.color ?? 0xffffff, CAR_MODELS[s.model ?? 'sedan']));
+    const cars = data.cars.map((s) => createCar(
+      s.x, s.y, s.a, s.color ?? 0xffffff, CAR_MODELS[s.model],
+      s.driver === null ? null : createDriver(s.driver),
+    ));
     const pickups: Pickup[] = data.pickups.map((k) => ({ ...k, respawn: 0 }));
     this.sim = new Simulation(data.city, createPlayer(data.player.x, data.player.y, data.player.a), cars, pickups);
     this.sim.populate(PED.count);
@@ -97,18 +101,21 @@ export class GameScene extends Phaser.Scene {
     const up = k.W.isDown || k.UP.isDown, down = k.S.isDown || k.DOWN.isDown;
     const left = k.A.isDown || k.LEFT.isDown, right = k.D.isDown || k.RIGHT.isDown;
     const p = this.sim.player;
-    // Mouse aim applies on foot only; in a car the keys steer as usual.
+    const inCar = p.car !== null;
+    // Mouse aim works on foot and from a car, so you can aim out of a window while driving.
     let aim: number | null = null;
-    if (!p.car && this.pointerSeen && this.menu.mouseAim) {
+    if (this.pointerSeen && this.menu.mouseAim) {
       const w = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
       aim = Math.atan2(w.y - p.y, w.x - p.x);
     }
+    // Space fires on foot; in a car it is the handbrake, so only the mouse fires there.
+    const firing = (k.SPACE.isDown && !inCar) || (ptr.leftButtonDown() && (inCar || aim !== null));
     return {
       throttle: (up ? 1 : 0) - (down ? 1 : 0),
       steer: (right ? 1 : 0) - (left ? 1 : 0),
       handbrake: k.SPACE.isDown,
       sprint: k.SHIFT.isDown,
-      fire: k.SPACE.isDown || (aim !== null && ptr.leftButtonDown()), // Space shoots on foot and is the handbrake in a car
+      fire: firing,
       aim,
       moveX: (right ? 1 : 0) - (left ? 1 : 0),
       moveY: (down ? 1 : 0) - (up ? 1 : 0),

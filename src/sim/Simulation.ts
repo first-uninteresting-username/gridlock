@@ -2,7 +2,7 @@ import { collideCars, separateBodies } from './collide';
 import { carContains, carSpeed, stepCar, type Car } from './car';
 import { createPedestrian, killPedestrian, panic, resetPedestrian, sidewalkSpots, stepPedestrian, type Pedestrian } from './pedestrian';
 import { findCarToEnter, findExitSpot, stepOnFoot, type Player } from './player';
-import { DAMAGE, PED, PICKUP, ROB } from './tuning';
+import { DAMAGE, MUZZLE, PED, PICKUP, ROB } from './tuning';
 import type { Input, World } from './types';
 import { createArsenal, WEAPON_ORDER, WEAPONS, type Arsenal, type Bullet, type WeaponId } from './weapons';
 
@@ -297,14 +297,18 @@ export class Simulation {
     const w = WEAPONS[ars.current];
     const wantsShot = input.fire && (w.auto || !ars.triggerHeld);
     ars.triggerHeld = input.fire;
-    if (p.car || !wantsShot || ars.cooldown > 0 || (ars.ammo[w.id] ?? 0) <= 0) return;
+    if (!wantsShot || ars.cooldown > 0 || (ars.ammo[w.id] ?? 0) <= 0) return;
 
     ars.cooldown = w.interval;
     ars.ammo[w.id] = (ars.ammo[w.id] ?? 0) - 1;
-    const fx = Math.cos(p.a), fy = Math.sin(p.a);
-    // Muzzle: in front of the player, on the right hand.
-    const x = p.x + fx * 14 - fy * 4, y = p.y + fy * 14 + fx * 4;
-    const a = p.a + (this.random() * 2 - 1) * w.spread;
+    // On foot you face where you shoot; from a car you aim with the mouse, or along the car's heading.
+    const aim = p.car ? (input.aim ?? p.a) : p.a;
+    const fx = Math.cos(aim), fy = Math.sin(aim);
+    // A shot from a car starts outside its body so it cannot hit the car you are sitting in.
+    const off = p.car ? Math.max(p.car.hl, p.car.hw) + MUZZLE.carMargin : 0;
+    const x = p.car ? p.x + fx * off : p.x + fx * MUZZLE.footForward - fy * MUZZLE.footSide;
+    const y = p.car ? p.y + fy * off : p.y + fy * MUZZLE.footForward + fx * MUZZLE.footSide;
+    const a = aim + (this.random() * 2 - 1) * w.spread;
     this.bullets.push({ x, y, vx: Math.cos(a) * w.bulletSpeed, vy: Math.sin(a) * w.bulletSpeed, travelled: 0, range: w.range, damage: w.damage });
     this.events.push({ type: 'shot', x, y, a, weapon: w.id });
     this.scarePedestrians(p.x, p.y, PED.gunScareRange);
