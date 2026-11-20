@@ -65,6 +65,16 @@ export class Effects {
       case 'pickup':
         this.burst(e.x, e.y, 10, 120, { life: 0.3, r: 2.5, color: 0xffd23f });
         break;
+      case 'playerHit':
+        this.burst(e.x, e.y, 5, 110, { life: 0.25, r: 2, color: 0xb3201b });
+        break;
+      case 'busted':
+      case 'playerDown':
+        this.burst(e.x, e.y, 16, 200, { life: 0.5, r: 3, color: 0xffd23f });
+        break;
+      case 'pickupDropped':
+        this.burst(e.pickup.x, e.pickup.y, 8, 100, { life: 0.3, r: 2, color: 0xffd23f });
+        break;
     }
   }
 

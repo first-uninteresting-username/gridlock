@@ -11,10 +11,12 @@ export interface Player {
   car: Car | null;
   /** Walk-cycle phase, advanced while moving. */
   stride: number;
+  /** Reaching zero (from police gunfire) books the player like a bust. */
+  health: number;
 }
 
 export function createPlayer(x: number, y: number, a: number): Player {
-  return { x, y, a, r: PLAYER.radius, car: null, stride: 0 };
+  return { x, y, a, r: PLAYER.radius, car: null, stride: 0, health: PLAYER.health };
 }
 
 export const bodyHitsWorld = (world: SolidQuery, x: number, y: number, r: number) =>
@@ -30,8 +32,13 @@ function overlapsCar(cars: readonly Car[], x: number, y: number, pad: number): b
  */
 export function stepOnFoot(p: Player, dt: number, input: Input, world: SolidQuery, cars: readonly Car[]): void {
   let vx: number, vy: number;
-  // Sprint applies to forward motion only: reversing stays at the normal back speed.
-  const sprinting = input.sprint && (input.aim !== null || input.throttle > 0);
+  // Sprint applies to forward motion only. With mouse aim, "forward" is the direction faced, so
+  // reversing and strafing keep the normal walk speed.
+  const aim = input.aim;
+  const movingForward = aim === null
+    ? input.throttle > 0
+    : input.moveX * Math.cos(aim) + input.moveY * Math.sin(aim) > 0;
+  const sprinting = input.sprint && movingForward;
   const speed = sprinting ? PLAYER.sprintSpeed : PLAYER.walkSpeed;
   if (input.aim !== null) {
     p.a = input.aim;

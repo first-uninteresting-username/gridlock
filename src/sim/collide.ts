@@ -74,8 +74,10 @@ export function separateBodies(a: RoundBody, b: RoundBody, world: SolidQuery, aS
   let pa = overlap * aShare, pb = overlap - pa;
   const aBlocked = pa > 0 && bodyHitsWorld(world, a.x - nx * pa, a.y - ny * pa, a.r);
   const bBlocked = pb > 0 && bodyHitsWorld(world, b.x + nx * pb, b.y + ny * pb, b.r);
-  if (aBlocked && !bBlocked) pb = overlap;
-  else if (bBlocked && !aBlocked) pa = overlap;
+  // A blocked body keeps its share: taking it anyway would push it into the wall and separate the
+  // pair by more than the overlap.
+  if (aBlocked && !bBlocked) { pa = 0; pb = overlap; }
+  else if (bBlocked && !aBlocked) { pa = overlap; pb = 0; }
   a.x -= nx * pa; a.y -= ny * pa;
   b.x += nx * pb; b.y += ny * pb;
   return true;
