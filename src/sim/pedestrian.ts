@@ -48,7 +48,7 @@ export const PED_LOOKS = 8;
 
 const DIRS: readonly (readonly [number, number])[] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
-const walkable = (k: string | null): boolean => k !== null && k !== 'building';
+const walkable = (k: string | null): boolean => k !== null && k !== 'building' && k !== 'water';
 
 export function createPedestrian(x: number, y: number, random: () => number): Pedestrian {
   const p = { r: PED.radius } as Pedestrian;
