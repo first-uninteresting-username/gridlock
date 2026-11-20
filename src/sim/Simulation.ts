@@ -158,8 +158,8 @@ export class Simulation {
       for (const c of this.cars) {
         const speed = carSpeed(c);
         if (speed < PED.carScareSpeed) continue;
-        const dx = p.x - c.x, dy = p.y - c.y, reach = c.hl + PED.carScareRange;
-        if (dx * dx + dy * dy > reach * reach) continue;
+        const dx = p.x - c.x, dy = p.y - c.y;
+        if (!carContains(c, p.x, p.y, PED.carScareRange)) continue;
         if (speed >= PED.carKillSpeed && carContains(c, p.x, p.y, p.r)) {
           this.damagePedestrian(p, Infinity, 'car', c.vx * PED.knockback, c.vy * PED.knockback);
           runOver = true;

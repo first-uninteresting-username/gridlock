@@ -1,4 +1,4 @@
-import type { Car } from './car';
+import { carContains, carSpeed, toCarLocal, type Car } from './car';
 import { bodyHitsWorld, pushOutOfCars } from './player';
 import { PED } from './tuning';
 import type { World } from './types';
@@ -27,6 +27,8 @@ export interface Pedestrian {
   fleeA: number;
   /** Seconds spent blocked while trying to walk; a long block makes the pedestrian turn around. */
   stuck: number;
+  /** Seconds left standing at the kerb, waiting for a gap in traffic before crossing. */
+  wait: number;
   /** Fling velocity after being hit; only used once dead. */
   vx: number;
   vy: number;
@@ -54,7 +56,7 @@ export function createPedestrian(x: number, y: number, random: () => number): Pe
 export function resetPedestrian(p: Pedestrian, x: number, y: number, random: () => number): void {
   Object.assign(p, {
     x, y, a: random() * Math.PI * 2, state: 'walk', health: PED.health, stride: random() * 6,
-    tx: x, ty: y, dx: 0, dy: 0, fear: 0, fleeA: 0, stuck: 0, vx: 0, vy: 0, deadFor: 0,
+    tx: x, ty: y, dx: 0, dy: 0, fear: 0, fleeA: 0, stuck: 0, wait: 0, vx: 0, vy: 0, deadFor: 0,
     look: Math.floor(random() * PED_LOOKS), pace: 0.8 + random() * 0.4,
   });
 }
@@ -73,9 +75,16 @@ export function sidewalkSpots(world: World): [number, number][] {
 /** Scare a pedestrian into running directly away from a point. */
 export function panic(p: Pedestrian, fromX: number, fromY: number, random: () => number, duration: number = PED.fearTime): void {
   if (p.state === 'dead') return;
+  // A car alongside a pedestrian re-panics it every step. Re-rolling the escape direction each
+  // time makes it vibrate in place, so keep the first direction and only refresh the timer.
+  if (p.state === 'flee') {
+    p.fear = Math.max(p.fear, duration);
+    return;
+  }
   p.state = 'flee';
-  p.fear = Math.max(p.fear, duration);
+  p.fear = duration;
   p.fleeA = Math.atan2(p.y - fromY, p.x - fromX) + (random() - 0.5) * 0.8;
+  p.wait = 0;
 }
 
 export function killPedestrian(p: Pedestrian, vx: number, vy: number): void {
@@ -93,38 +102,72 @@ function move(p: Pedestrian, dx: number, dy: number, world: World): void {
 }
 
 /**
+ * True when a moving car will reach this road tile before a pedestrian could get clear of it.
+ * Parked cars are ignored here; `chooseNext` rules out their tiles outright instead.
+ */
+function crossingBlocked(x: number, y: number, cars: readonly Car[]): boolean {
+  for (const c of cars) {
+    const speed = carSpeed(c);
+    if (speed < PED.carScareSpeed) continue;
+    const dx = x - c.x, dy = y - c.y, dist = Math.hypot(dx, dy);
+    if (dist > c.hl + speed * PED.crossTime) continue; // still too far away to matter
+    const [, ly] = toCarLocal(c, x, y);
+    if (Math.abs(ly) > c.hw + PED.radius + 4) continue; // tile is outside the car's lane
+    const closing = (dx * c.vx + dy * c.vy) / (dist || 1); // speed towards the tile, px/s
+    if (closing <= speed * 0.25) continue; // not heading this way
+    if ((dist - c.hl) / closing < PED.crossTime) return true;
+  }
+  return false;
+}
+
+/**
  * Picks the next tile to walk to. Sidewalks are preferred and a pedestrian tends to keep going the
  * way it was heading; now and then it steps off the kerb to cross a street, and once on the road it
- * keeps straight on until it reaches the other side. `turnBack` forces a U-turn (when blocked).
+ * keeps straight on until it reaches the other side. A pedestrian will not walk into a car, and it
+ * waits at the kerb if traffic is coming. `turnBack` forces a U-turn (when blocked).
  */
-function chooseNext(p: Pedestrian, world: World, random: () => number, turnBack: boolean): void {
+function chooseNext(p: Pedestrian, world: World, cars: readonly Car[], random: () => number, turnBack: boolean): void {
   const ts = world.tileSize;
   const col = Math.floor(p.x / ts), row = Math.floor(p.y / ts);
-  const onRoad = world.kindAt(p.x, p.y) === 'road';
-  const options: { dx: number; dy: number; w: number }[] = [];
+  const here = world.kindAt(p.x, p.y);
+  const onRoad = here === 'road', onSidewalk = here === 'sidewalk';
+  const options: { dx: number; dy: number; w: number; unsafe: boolean }[] = [];
   let total = 0;
   for (const [dx, dy] of DIRS) {
     const kind = world.kindAt((col + dx + 0.5) * ts, (row + dy + 0.5) * ts);
     if (!walkable(kind)) continue;
+    const nx = (col + dx + 0.5) * ts, ny = (row + dy + 0.5) * ts;
+    if (cars.some((c) => carContains(c, nx, ny, p.r))) continue; // never step into a car's body
     const straight = dx === p.dx && dy === p.dy, back = dx === -p.dx && dy === -p.dy;
     let w = kind === 'sidewalk' ? 1 : kind === 'grass' ? 0.6 : 0.4;
     if (straight) w *= onRoad ? 8 : kind === 'sidewalk' ? 4 : 1;
     if (back) w *= 0.02;
     if (turnBack) w = back ? 1 : 0;
+    const unsafe = !turnBack && onSidewalk && kind === 'road' && crossingBlocked(nx, ny, cars);
     if (w <= 0) continue;
-    options.push({ dx, dy, w });
+    options.push({ dx, dy, w, unsafe });
     total += w;
   }
   if (options.length === 0) { // boxed in (or turning back into a wall): any open neighbour will do
-    for (const [dx, dy] of DIRS) if (walkable(world.kindAt((col + dx + 0.5) * ts, (row + dy + 0.5) * ts))) options.push({ dx, dy, w: 1 }), total++;
-    if (options.length === 0) return; // nowhere to go
+    for (const [dx, dy] of DIRS) {
+      const nx = (col + dx + 0.5) * ts, ny = (row + dy + 0.5) * ts;
+      if (walkable(world.kindAt(nx, ny)) && !cars.some((c) => carContains(c, nx, ny, p.r))) options.push({ dx, dy, w: 1, unsafe: false }), total++;
+    }
+    if (options.length === 0) { p.tx = p.x; p.ty = p.y; return; } // surrounded by cars: hold still
   }
   let r = random() * total;
   const pick = options.find((o) => (r -= o.w) < 0) ?? options[options.length - 1];
   p.dx = pick.dx;
   p.dy = pick.dy;
-  p.tx = (col + pick.dx + 0.5) * ts;
-  p.ty = (row + pick.dy + 0.5) * ts;
+  if (pick.unsafe) { // traffic is coming: stay on the kerb, face the road and look again shortly
+    p.wait = PED.kerbWait * (0.6 + random() * 0.8);
+    p.tx = p.x; p.ty = p.y;
+    p.a = Math.atan2(pick.dy, pick.dx);
+  } else {
+    p.wait = 0;
+    p.tx = (col + pick.dx + 0.5) * ts;
+    p.ty = (row + pick.dy + 0.5) * ts;
+  }
 }
 
 function turnToward(p: Pedestrian, a: number, dt: number): void {
@@ -152,6 +195,7 @@ export function stepPedestrian(p: Pedestrian, dt: number, world: World, cars: re
       p.tx = (Math.floor(p.x / world.tileSize) + 0.5) * world.tileSize;
       p.ty = (Math.floor(p.y / world.tileSize) + 0.5) * world.tileSize;
       p.dx = p.dy = 0;
+      p.wait = 0;
     } else {
       want = PED.runSpeed * dt;
       move(p, Math.cos(p.fleeA) * want, Math.sin(p.fleeA) * want, world);
@@ -160,14 +204,18 @@ export function stepPedestrian(p: Pedestrian, dt: number, world: World, cars: re
     }
   }
   if (p.state === 'walk') {
-    const ddx = p.tx - p.x, ddy = p.ty - p.y, d = Math.hypot(ddx, ddy);
-    want = Math.min(PED.walkSpeed * p.pace * dt, d);
-    if (d > 1e-6) {
-      move(p, (ddx / d) * want, (ddy / d) * want, world);
-      turnToward(p, Math.atan2(ddy, ddx), dt);
-      p.stride += dt * 9 * p.pace;
+    if (p.wait > 0) {
+      p.wait -= dt; // waiting at the kerb for traffic to clear
+    } else {
+      const ddx = p.tx - p.x, ddy = p.ty - p.y, d = Math.hypot(ddx, ddy);
+      want = Math.min(PED.walkSpeed * p.pace * dt, d);
+      if (d > 1e-6) {
+        move(p, (ddx / d) * want, (ddy / d) * want, world);
+        turnToward(p, Math.atan2(ddy, ddx), dt);
+        p.stride += dt * 9 * p.pace;
+      }
+      if (d - want < 0.5) chooseNext(p, world, cars, random, false); // arrived
     }
-    if (d - want < 0.5) chooseNext(p, world, random, false); // arrived
   }
 
   pushOutOfCars(p, world, cars);
@@ -177,7 +225,7 @@ export function stepPedestrian(p: Pedestrian, dt: number, world: World, cars: re
     p.stuck += dt;
     if (p.stuck > 0.5) {
       p.stuck = 0;
-      if (p.state === 'walk') chooseNext(p, world, random, true);
+      if (p.state === 'walk') chooseNext(p, world, cars, random, true);
       else p.fleeA += Math.PI / 2 + random() * Math.PI / 2;
     }
   } else p.stuck = 0;
