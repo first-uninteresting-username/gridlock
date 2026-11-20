@@ -7,7 +7,8 @@ Current scope is deliberately minimal: walking, entering and leaving cars, arcad
 handbrake drift, car-to-car and wall collisions, fake-3D buildings, and guns. Shot cars smoke,
 catch fire and explode, and the blast can set off nearby cars. Pedestrians (on foot only, there is
 no AI traffic) wander the sidewalks and cross streets; they run from gunfire, explosions and fast
-cars, and can be shot or run over.
+cars, and can be shot or run over. You can also rob them at close range: victims drop cash (and
+occasionally ammo), and witnesses may raise the wanted level.
 
 ## Controls
 
@@ -18,6 +19,7 @@ cars, and can be shot or run over.
 | Mouse | Aim on foot (turn off in the menu to rotate with A / D instead) |
 | Left click / Space | Shoot (on foot); Space is also the handbrake in a car |
 | E / F / Enter | Get into the nearest car, or get out |
+| R | Rob a nearby pedestrian (a prompt appears when one is close enough) |
 | Q | Switch weapon |
 | Esc | Menu: controls and settings (pauses the game) |
 
