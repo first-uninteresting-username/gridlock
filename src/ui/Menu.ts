@@ -38,6 +38,7 @@ const CONTROLS: Control[] = [
   { keys: ['Mouse'], description: 'Aim (on foot, or out of a car window)' },
   { keys: ['Left click', 'Space'], description: 'Shoot. Space also handbrakes in a car, so use left click to shoot while driving.' },
   { keys: ['E', 'F', 'Enter'], description: 'Get in or out of a car' },
+  { keys: ['R'], description: 'Rob a nearby pedestrian (witnesses may call the police)' },
   { keys: ['Q'], description: 'Switch weapon' },
   { keys: ['Esc'], description: 'Open or close this menu' },
 ];

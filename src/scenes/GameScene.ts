@@ -15,6 +15,7 @@ import { CAR_MODELS } from '../sim/models';
 import { CAR, KMH_PER_PX, PED } from '../sim/tuning';
 import type { Input } from '../sim/types';
 import { Hud } from '../ui/Hud';
+import { InteractionTooltip } from '../ui/InteractionTooltip';
 import { Menu } from '../ui/Menu';
 import { buildCityData, type TiledMap } from '../world/tiled';
 
@@ -33,11 +34,13 @@ export class GameScene extends Phaser.Scene {
   private buildings!: BuildingLayer;
   private rig!: CameraRig;
   private hud!: Hud;
+  private tooltip!: InteractionTooltip;
   private menu!: Menu;
   /** Mouse aim only takes over once the pointer has actually moved, so keyboard-only play still works. */
   private pointerSeen = false;
   private keys!: Keys;
   private wantToggle = false;
+  private wantRob = false;
   private acc = 0;
 
   constructor() {
@@ -64,6 +67,7 @@ export class GameScene extends Phaser.Scene {
     this.carViews = cars.map((c) => new CarView(this, c));
     this.pickupViews = pickups.map((k) => new PickupView(this, k));
     this.effects = new Effects(this);
+    this.tooltip = new InteractionTooltip(this);
     // Dev builds only: lets the console and browser tests inspect and script the game.
     if (import.meta.env.DEV) Object.assign(window, { gridlock: { sim: this.sim, scene: this } });
     this.playerView = new PlayerView(this, this.sim.player);
@@ -77,19 +81,21 @@ export class GameScene extends Phaser.Scene {
     this.scale.on('resize', (size: Phaser.Structs.Size) => cam.setSize(size.width, size.height));
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT') as Keys;
-    const toggle = (e: KeyboardEvent) => { if (!e.repeat) this.wantToggle = true; };
+    // No capture: the DOM pause menu needs these keys for its own focus navigation.
+    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT', false) as Keys;
+    const toggle = (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantToggle = true; };
     kb.on('keydown-E', toggle);
     kb.on('keydown-F', toggle);
     kb.on('keydown-ENTER', toggle);
     kb.on('keydown-Q', () => { if (!this.menu.open) this.sim.cycleWeapon(); });
+    kb.on('keydown-R', (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantRob = true; });
     kb.on('keydown-ESC', () => this.menu.toggle());
 
     this.input.mouse?.disableContextMenu();
     this.input.on('pointermove', () => { this.pointerSeen = true; });
     this.input.on('pointerdown', () => { this.pointerSeen = true; });
     // Drop held buttons/keys when the menu opens so nothing is stuck on resume.
-    this.menu.onToggle = (open) => { if (open) { this.wantToggle = false; this.acc = 0; } };
+    this.menu.onToggle = (open) => { if (open) { this.wantToggle = false; this.wantRob = false; this.acc = 0; } };
   }
 
   private readInput(): Input {
@@ -122,6 +128,7 @@ export class GameScene extends Phaser.Scene {
     const frame = Math.min(deltaMs / 1000, MAX_FRAME);
     if (!this.menu.open) {
       if (this.wantToggle) { this.wantToggle = false; this.sim.toggleCar(); }
+      if (this.wantRob) { this.wantRob = false; this.sim.robNearest(); }
       const input = this.readInput();
       this.acc += frame;
       while (this.acc >= STEP) { this.sim.step(STEP, input); this.acc -= STEP; }
@@ -140,8 +147,13 @@ export class GameScene extends Phaser.Scene {
     this.rig.update(frame, p.x, p.y, car?.vx ?? 0, car?.vy ?? 0, car ? Math.min(carSpeed(car) / CAR.cameraRefSpeed, 1) : 0);
     for (const v of this.carViews) v.sync();
     for (const v of this.pedViews) v.sync();
+    while (this.pickupViews.length < this.sim.pickups.length) {
+      this.pickupViews.push(new PickupView(this, this.sim.pickups[this.pickupViews.length]));
+    }
     for (const v of this.pickupViews) v.sync(time / 1000);
     this.playerView.sync(this.sim.arsenal.current);
+    this.tooltip.show(this.menu.open ? null : this.sim.robTarget());
+    this.tooltip.sync();
     this.effects.update(frame, this.sim.cars, this.sim.bullets);
     this.sim.view = this.cameras.main.worldView; // replacement pedestrians appear outside this
     this.buildings.draw(this.rig.x, this.rig.y, this.cameras.main.worldView);
