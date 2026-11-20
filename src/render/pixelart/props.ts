@@ -66,5 +66,20 @@ export const BLOOD_ART: PixelMap = [
     '...............',
 ];
 
+/** A small ammo box dropped by a fallen officer: yellow case, dark interior, white rounds. */
+export const AMMO_ART: PixelMap = [
+  '..........',
+  '..aaaaaa..',
+  '.acccccca.',
+  '.acWWWWca.',
+  '.acccccca.',
+  '.acWWWWca.',
+  '.acccccca.',
+  '.acccccca.',
+  '.acccccca.',
+  '..aaaaaa..',
+  '..........',
+];
+
 /** A single tyre-black pixel, stretched by the car view to each wheel's size. */
 export const WHEEL_ART: PixelMap = ['B'];

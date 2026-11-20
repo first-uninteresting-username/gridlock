@@ -49,6 +49,26 @@ export const PED_HEAD_ART: PixelMap = [
   '.hs.',
 ];
 
+/** A blue uniform, drawn in its own tones rather than tinted like a bystander's shirt. */
+export const POLICE_BODY_ART: PixelMap = [
+  '.qqq.',
+  'qqpqq',
+  'qpppq',
+  'qpppq',
+  'ppppP',
+  'ppppP',
+  'PPPPP',
+  '.PPP.',
+];
+
+/** The dark cap is the readable police cue from above. */
+export const POLICE_HEAD_ART: PixelMap = [
+  'PPPP',
+  'KKKK',
+  'hhss',
+  '.hs.',
+];
+
 /**
  * A pedestrian sprawled on the ground, seen from above. Replaces the upright body and head on death:
  * pale skin and dull, bloodstained clothes read as a corpse rather than a person who merely fell over.
