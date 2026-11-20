@@ -1,4 +1,4 @@
-// The tile catalogue: what each tile in public/tiles/city.svg is. Used to draw the tileset image
+// The tile catalogue: what each tile in public/tiles/city.svg is. Used to draw the (pixel-art) tileset image
 // (gen-tileset.mjs). The game reads the same information from the tile properties embedded in the
 // map (public/maps/city.tmj), so keep the two in step when you add tiles.
 //
@@ -8,6 +8,7 @@
 //   roof    color,  buildings only: roof colour
 
 export const TILE_SIZE = 64;
+export const ART_PIXEL = 2; // world px per art pixel; keep in step with ART_PIXEL in src/render/art.ts
 export const COLUMNS = 7;
 export const MARGIN = 1, SPACING = 2; // 1px extruded border around each tile stops bleeding when zoomed
 

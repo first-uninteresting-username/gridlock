@@ -1,42 +1,126 @@
 // Draws the tileset image, public/tiles/city.svg, from the catalogue in tiles.mjs.
 // This only makes the picture. The map itself (public/maps/city.tmj) is hand-edited in Tiled.
+//
+// The tiles are pixel art: each tile is a grid of art pixels (ART_PIXEL world px square) built in
+// code, then written as an SVG of crisp rects so Tiled and Phaser can both load it at natural size.
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { COLUMNS, MARGIN, SPACING, TILE_COUNT, TILE_SIZE as T, TILE, TILES } from './tiles.mjs';
+import { ART_PIXEL, COLUMNS, MARGIN, SPACING, TILE_COUNT, TILE_SIZE as T, TILE, TILES } from './tiles.mjs';
 
 const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-const shade = (h, k) => '#' + hex(h).map((c) => (c * k | 0).toString(16).padStart(2, '0')).join('');
-const ROAD = '#3a3d42', DASH = '#d8c25a', WALK = '#9a968c', WALK_EDGE = '#8e8a81', GRASS = '#4f7a3a';
+const shade = (h, k) => '#' + hex(h).map((c) => Math.min(255, c * k | 0).toString(16).padStart(2, '0')).join('');
 
-// Each tile is drawn in its own (T + 2 * MARGIN) cell: the tile at (MARGIN, MARGIN) plus a 1px
-// extruded border that stops texture bleeding when zoomed. Cells sit SPACING - 2 * MARGIN apart
-// (zero), so they butt together and tile (col, row) lands where the map's margin/spacing expect it.
+const ROAD = '#3a3d42', ROAD_DARK = '#34373c', ROAD_LIGHT = '#404348', DASH = '#d8c25a';
+const WALK = '#9a968c', WALK_EDGE = '#8e8a81', WALK_LIGHT = '#a39f95';
+const GRASS = '#4f7a3a', GRASS_DARK = '#446c33', GRASS_LIGHT = '#5b8a45';
+const PIP = '#1b2430';
+
+const N = T / ART_PIXEL; // art pixels per tile side
+
+/** Deterministic noise in [0, 1) from a pixel position, so a tile looks the same every run and seams never show. */
+const hash01 = (x, y, salt) => {
+  let h = (Math.imul(x + 1, 374761393) + Math.imul(y + 1, 668265263) + Math.imul(salt + 1, 2246822519)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+};
+
+const grid = (fill) => Array.from({ length: N }, () => Array(N).fill(fill));
+const rect = (g, x, y, w, h, c) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (g[j]?.[i] !== undefined) g[j][i] = c; };
+/** Scatters single-pixel specks of `c` over roughly `share` of the pixels that are currently `over`. */
+const speckle = (g, over, c, share, salt) => {
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (g[y][x] === over && hash01(x, y, salt) < share) g[y][x] = c;
+};
+
+function roadTile() {
+  const g = grid(ROAD);
+  speckle(g, ROAD, ROAD_DARK, 0.05, 1);
+  speckle(g, ROAD, ROAD_LIGHT, 0.04, 2);
+  return g;
+}
+
+function sidewalkTile() {
+  const g = grid(WALK);
+  speckle(g, WALK, WALK_LIGHT, 0.04, 3);
+  // Slab joints: a cross through the middle, and the top and left edges (the neighbour supplies the rest).
+  rect(g, 0, N / 2, N, 1, WALK_EDGE);
+  rect(g, N / 2, 0, 1, N, WALK_EDGE);
+  rect(g, 0, 0, N, 1, WALK_EDGE);
+  rect(g, 0, 0, 1, N, WALK_EDGE);
+  return g;
+}
+
+function grassTile() {
+  const g = grid(GRASS);
+  speckle(g, GRASS, GRASS_DARK, 0.09, 4);
+  speckle(g, GRASS, GRASS_LIGHT, 0.06, 5);
+  return g;
+}
+
+// A building tile only shows in Tiled: in the game its roof is drawn over it with a lean.
+function buildingTile(t) {
+  const g = grid(shade(t.roof, 0.8));
+  rect(g, 2, 2, N - 4, N - 4, t.roof);
+  rect(g, 2, 2, N - 4, 1, shade(t.roof, 1.1)); // lit top edge
+  for (let i = 0; i <= t.level; i++) rect(g, 5 + 6 * i, 5, 4, 4, PIP); // pips: one to three for low / mid / tall
+  return g;
+}
+
+function tilePixels(t) {
+  switch (t.id) {
+    case TILE.ROAD: return roadTile();
+    // Centre lines sit on the tile's edge and run into the extruded border, so adjacent tiles join.
+    case TILE.DASH_H: { const g = roadTile(); rect(g, 4, N - 2, 14, 2, DASH); return g; }
+    case TILE.DASH_V: { const g = roadTile(); rect(g, N - 2, 4, 2, 14, DASH); return g; }
+    case TILE.SIDEWALK: return sidewalkTile();
+    case TILE.GRASS: return grassTile();
+    default: return buildingTile(t);
+  }
+}
+
+// Each tile gets a (T + 2 * MARGIN) cell: the tile at (MARGIN, MARGIN) plus a 1px extruded border that
+// stops texture bleeding when zoomed. Cells sit SPACING - 2 * MARGIN apart (zero), so they butt together
+// and tile (col, row) lands where the map's margin/spacing expect it.
 const STRIDE = T + SPACING, CELL = T + 2 * MARGIN, ROWS = TILE_COUNT / COLUMNS;
 const IW = MARGIN * 2 + COLUMNS * T + (COLUMNS - 1) * SPACING, IH = MARGIN * 2 + ROWS * T + (ROWS - 1) * SPACING;
-const rect = (x, y, w, h, fill, extra = '') => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"${extra}/>`;
 
-function tileSvg(t) {
-  const M = MARGIN;
-  const bg = (fill) => rect(0, 0, CELL, CELL, fill);
-  switch (t.id) {
-    case TILE.ROAD: return bg(ROAD);
-    // Centre lines run into the extruded border, so adjacent tiles join.
-    case TILE.DASH_H: return bg(ROAD) + rect(M + 8, M + 60, 28, T - 60 + M, DASH);
-    case TILE.DASH_V: return bg(ROAD) + rect(M + 60, M + 8, T - 60 + M, 28, DASH);
-    case TILE.SIDEWALK: return bg(WALK) + `<rect x="${M + 2}" y="${M + 2}" width="${T - 4}" height="${T - 4}" fill="none" stroke="${WALK_EDGE}" stroke-width="2"/>`;
-    case TILE.GRASS: return bg(GRASS);
-    default: { // building: roof colour, darker rim, and one to three pips for low / mid / tall
-      let s = bg(shade(t.roof, 0.8)) + rect(M + 4, M + 4, T - 8, T - 8, t.roof);
-      for (let i = 0; i <= t.level; i++) s += rect(M + 10 + 12 * i, M + 10, 8, 8, '#000');
-      return s;
+// Paint every tile into one image-sized grid of texels (1 texel = 1 SVG unit).
+const image = Array.from({ length: IH }, () => Array(IW).fill(null));
+for (const t of TILES) {
+  const px = tilePixels(t);
+  const ox = (t.id % COLUMNS) * STRIDE, oy = Math.floor(t.id / COLUMNS) * STRIDE;
+  const clamp = (v) => Math.min(T - 1, Math.max(0, v));
+  for (let ty = 0; ty < CELL; ty++) {
+    for (let tx = 0; tx < CELL; tx++) {
+      image[oy + ty][ox + tx] = px[Math.floor(clamp(ty - MARGIN) / ART_PIXEL)][Math.floor(clamp(tx - MARGIN) / ART_PIXEL)];
     }
   }
 }
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${IW}" height="${IH}" viewBox="0 0 ${IW} ${IH}" shape-rendering="crispEdges">\n`
-  + TILES.map((t) => `  <g transform="translate(${(t.id % COLUMNS) * STRIDE} ${Math.floor(t.id / COLUMNS) * STRIDE})">${tileSvg(t)}</g>`).join('\n')
-  + '\n</svg>\n';
+/** Merges texels into as few rectangles as possible, grouped by colour: a run per row, then equal runs stacked. */
+function rectsByColour() {
+  const byColour = new Map();
+  let open = new Map(); // "colour x w" -> the rect still growing downwards
+  for (let y = 0; y <= IH; y++) {
+    const next = new Map();
+    for (let x = 0; y < IH && x < IW;) {
+      const c = image[y][x];
+      let w = 1;
+      while (x + w < IW && image[y][x + w] === c) w++;
+      const id = `${c} ${x} ${w}`;
+      const r = open.get(id) ?? { x, y, w, h: 0 };
+      r.h++;
+      next.set(id, r);
+      if (!open.has(id)) { if (!byColour.has(c)) byColour.set(c, []); byColour.get(c).push(r); }
+      x += w;
+    }
+    open = next;
+  }
+  return byColour;
+}
+
+const paths = [...rectsByColour()].map(([c, rs]) => `  <path fill="${c}" d="${rs.map((r) => `M${r.x} ${r.y}h${r.w}v${r.h}h-${r.w}z`).join('')}"/>`);
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${IW}" height="${IH}" viewBox="0 0 ${IW} ${IH}" shape-rendering="crispEdges">\n${paths.join('\n')}\n</svg>\n`;
 
 const root = new URL('../public/', import.meta.url);
 mkdirSync(new URL('tiles/', root), { recursive: true });
 writeFileSync(new URL('tiles/city.svg', root), svg);
-console.log(`tileset: ${IW}x${IH}px, ${TILES.length} tiles in ${COLUMNS} columns`);
+console.log(`tileset: ${IW}x${IH}px, ${TILES.length} tiles in ${COLUMNS} columns, ${(svg.length / 1024).toFixed(0)} KB`);

@@ -6,7 +6,7 @@ import { hash01 } from '../world/tiled';
 const WALLS = [0x4a4a52, 0x3c3c44, 0x5a5a62, 0x44444c];
 // Where the neighbour sits for each face, in the same order.
 const NEIGHBOURS = [[0, -1], [1, 0], [0, 1], [-1, 0]] as const;
-const RIM = 5; // px of darker roof edge, drawn only where the roof has an outside edge
+const RIM = 6; // px of darker roof edge (3 art pixels), drawn only where the roof has an outside edge
 const UNIT_CHANCE = 0.06; // share of roof tiles carrying a rooftop unit
 
 const darken = (c: number, k: number) => (((c >> 16) & 255) * k << 16) | ((((c >> 8) & 255) * k) << 8) | ((c & 255) * k);
