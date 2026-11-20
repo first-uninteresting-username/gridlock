@@ -75,11 +75,16 @@ too. Eight-digit hex is `rrggbbaa`.
 
 Saturated colors belong to cars and the accent. Buildings, ground and UI stay muted.
 
-### HUD and menu (DOM, in `index.html`)
+### HUD (canvas) and menu (DOM, in `index.html`)
 
-The HUD and menu are DOM text over the canvas, so they are not pixelated. Keep them flat to match:
-dark translucent panels, 1 px borders, `border-radius` 6 to 10 px, no gradients, `system-ui` for text
-and `ui-monospace` for key caps. Text is `#eee` with a `0 1px 3px #000` shadow over the game; section
+The in-game HUD is pixel art drawn in the canvas by `src/ui/Hud.ts`: a 5x7 bitmap font and the star and
+coin icons live in `src/render/pixelart/font.ts`, are painted with the other textures at boot, and are
+tinted from the palette. Keep glyph maps white (`W`) so one texture can be tinted to any palette colour;
+one texel is one canvas pixel. `Hud.sync()` cancels the world camera's zoom so the readout stays pinned
+to the top left instead of drifting as the camera moves or zooms.
+
+The pause menu is still DOM text over the canvas. Keep it flat: dark translucent panels, 1 px borders,
+`border-radius` 6 to 10 px, no gradients, `system-ui` for text and `ui-monospace` for key caps. Section
 labels are 12 px uppercase, letter-spaced, `#8a94a3`. Wanted stars and other "pay attention" readouts
 use the accent `#ffd23f`; danger readouts use `#b3201b`. Take colors from the table above.
 
@@ -87,11 +92,12 @@ use the accent `#ffd23f`; danger readouts use `#b3201b`. Take colors from the ta
 
 | Kind | Where |
 | --- | --- |
-| Pixel maps | `src/render/pixelart/`: `cars.ts` (per model: body, trim, wrecked), `people.ts` (player, pedestrians, guns), `props.ts` (pickup, cash, blood, wheel) |
+| Pixel maps | `src/render/pixelart/`: `cars.ts` (per model: body, trim, wrecked), `people.ts` (player, pedestrians, guns), `props.ts` (pickup, cash, blood, wheel), `font.ts` (HUD glyphs, stars, coin) |
 | Legend | `src/render/pixelart/palette.ts` |
 | Painter | `src/render/pixelart/pixelMap.ts`: validates rows and characters, paints a canvas texture |
-| Registration | `src/render/art.ts`: `FIXED_SPRITES` (key to map) and the car maps; `paintArt` runs in `BootScene.create()` |
-| Use in a scene | `addSprite(scene, key, x, y)` / `setSprite(img, key)`; both set the world-size scale |
+| Registration | `src/render/art.ts`: `FIXED_SPRITES` (key to map), the car maps and the HUD art; `paintArt` runs in `BootScene.create()` |
+| Use in a scene | `addSprite(scene, key, x, y)` / `setSprite(img, key)`; both set the world-size scale. HUD art is screen-space: create images directly and let `Hud.sync()` handle the camera |
+| HUD | `src/ui/Hud.ts` (screen-space container, text lines, stars, cash icon); pixel maps in `font.ts` |
 | Tileset | `public/tiles/city.svg`, generated pixel art: edit `tools/gen-tileset.mjs` and `tools/tiles.mjs`, then `nix develop -c npm run gen:tileset`. It is an SVG of crisp rects only because Tiled needs an image file; do not hand-edit it |
 | Map | `public/maps/city.tmj`, hand-placed in Tiled; keep tile properties in step with `tools/tiles.mjs` |
 | Per-frame shapes | Phaser Graphics in code (`src/render/Effects.ts`, `BuildingLayer.ts`). Use the palette above |
