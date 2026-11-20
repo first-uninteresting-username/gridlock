@@ -1,4 +1,4 @@
-// The tile catalogue: what each tile in public/tiles/city.png is. Used to draw the tileset image
+// The tile catalogue: what each tile in public/tiles/city.svg is. Used to draw the tileset image
 // (gen-tileset.mjs). The game reads the same information from the tile properties embedded in the
 // map (public/maps/city.tmj), so keep the two in step when you add tiles.
 //

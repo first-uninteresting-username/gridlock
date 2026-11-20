@@ -4834,7 +4834,7 @@
   {
    "firstgid": 1,
    "name": "city",
-   "image": "../tiles/city.png",
+   "image": "../tiles/city.svg",
    "imagewidth": 462,
    "imageheight": 264,
    "tilewidth": 64,

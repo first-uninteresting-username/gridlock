@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { loadArt } from '../render/art';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,7 +8,8 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     this.load.tilemapTiledJSON('city', 'maps/city.tmj');
-    this.load.image('city-tiles', 'tiles/city.png');
+    this.load.svg('city-tiles', 'tiles/city.svg'); // natural size: tile frames must stay 1:1 with the map's tile size
+    loadArt(this.load);
   }
 
   create(): void {

@@ -39,16 +39,17 @@ In dev builds, `window.gridlock.sim` exposes the simulation in the browser conso
 src/
   sim/        Gameplay rules: car handling, collisions, player. No Phaser imports.
   world/      The tile grid (City) and the Tiled map loader.
-  render/     Phaser views: cars, player, leaning buildings, follow camera.
+  render/     Phaser views: cars, player, leaning buildings, follow camera. art.ts loads the SVG sprites.
   scenes/     Phaser scenes: Boot (asset loading) and Game (fixed 120 Hz sim + rendering).
   story/      Ink story (main.ink) and StoryRunner wrapper. Not wired into gameplay yet.
   ui/         DOM overlay (HUD).
 public/
   maps/city.tmj   The city, editable in Tiled.
-  tiles/city.png  The tileset image.
+  tiles/city.svg  The tileset image.
+  art/            SVG sprites: cars, player, weapons, pickup. Registered in src/render/art.ts.
 tools/
   tiles.mjs       The tile catalogue (what each tile is).
-  gen-tileset.mjs Draws tiles/city.png from the catalogue. Never touches the map.
+  gen-tileset.mjs Draws tiles/city.svg from the catalogue. Never touches the map.
   ink-plugin.ts   Vite plugin that compiles .ink files at build time.
 ```
 
