@@ -7,6 +7,8 @@ export interface Input {
   handbrake: boolean;
   /** Trigger held (on foot). */
   fire: boolean;
+  /** Sprint held (on foot): move faster while going forward. */
+  sprint: boolean;
   /**
    * World angle the player should face on foot (mouse aim), or null for keyboard-only
    * rotate-and-walk. While set, on-foot movement uses `moveX`/`moveY` instead of throttle/steer.
@@ -34,4 +36,4 @@ export interface World extends SolidQuery {
   kindAt(x: number, y: number): GroundKind | null;
 }
 
-export const NO_INPUT: Input = { throttle: 0, steer: 0, handbrake: false, fire: false, aim: null, moveX: 0, moveY: 0 };
+export const NO_INPUT: Input = { throttle: 0, steer: 0, handbrake: false, fire: false, sprint: false, aim: null, moveX: 0, moveY: 0 };
