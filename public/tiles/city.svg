@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="396" height="66" viewBox="0 0 396 66" shape-rendering="crispEdges">
+  <g transform="translate(0 0)"><rect width="66" height="66" fill="#3a3d42"/></g>
+  <g transform="translate(66 0)"><rect width="66" height="66" fill="#3a3d42"/><rect x="9" y="61" width="28" height="5" fill="#d8c25a"/></g>
+  <g transform="translate(132 0)"><rect width="66" height="66" fill="#3a3d42"/><rect x="61" y="9" width="5" height="28" fill="#d8c25a"/></g>
+  <g transform="translate(198 0)"><rect width="66" height="66" fill="#9a968c"/><rect x="3" y="3" width="60" height="60" fill="none" stroke="#8e8a81" stroke-width="2"/></g>
+  <g transform="translate(264 0)"><rect width="66" height="66" fill="#4f7a3a"/></g>
+  <g transform="translate(330 0)"><rect width="66" height="66" fill="#2a2a2e"/></g>
+</svg>

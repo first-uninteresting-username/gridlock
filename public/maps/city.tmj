@@ -6042,7 +6042,7 @@
   {
    "firstgid": 1,
    "name": "city",
-   "image": "../tiles/city.png",
+   "image": "../tiles/city.svg",
    "imagewidth": 396,
    "imageheight": 66,
    "tilewidth": 64,
