@@ -5,7 +5,9 @@ top-down crime games: walk around a city, get into any parked car and drive it.
 
 Current scope is deliberately minimal: walking, entering and leaving cars, arcade driving with a
 handbrake drift, car-to-car and wall collisions, fake-3D buildings, and guns. Shot cars smoke,
-catch fire and explode, and the blast can set off nearby cars.
+catch fire and explode, and the blast can set off nearby cars. Pedestrians (on foot only, there is
+no AI traffic) wander the sidewalks and cross streets; they run from gunfire, explosions and fast
+cars, and can be shot or run over.
 
 ## Controls
 
@@ -37,16 +39,16 @@ In dev builds, `window.gridlock.sim` exposes the simulation in the browser conso
 
 ```
 src/
-  sim/        Gameplay rules: car handling, collisions, player. No Phaser imports.
+  sim/        Gameplay rules: car handling, collisions, player, pedestrians. No Phaser imports.
   world/      The tile grid (City) and the Tiled map loader.
-  render/     Phaser views: cars, player, leaning buildings, follow camera. art.ts loads the SVG sprites.
+  render/     Phaser views: cars, player, pedestrians, leaning buildings, follow camera. art.ts loads the SVG sprites.
   scenes/     Phaser scenes: Boot (asset loading) and Game (fixed 120 Hz sim + rendering).
   story/      Ink story (main.ink) and StoryRunner wrapper. Not wired into gameplay yet.
   ui/         DOM overlay (HUD).
 public/
   maps/city.tmj   The city, editable in Tiled.
   tiles/city.svg  The tileset image.
-  art/            SVG sprites: cars, player, weapons, pickup. Registered in src/render/art.ts.
+  art/            SVG sprites: cars, player, pedestrians, weapons, pickup. Registered in src/render/art.ts.
 tools/
   tiles.mjs       The tile catalogue (what each tile is).
   gen-tileset.mjs Draws tiles/city.svg from the catalogue. Never touches the map.
@@ -83,8 +85,9 @@ properties, so existing maps are not touched by `gen:tileset`.
 - **cars**: points with `heading` and an optional `color`.
 - **pickups**: points with `weapon` (`smg`) and `ammo`. They respawn 30 s after being collected.
 
-Weapons, car health and explosion strength are tuned in `src/sim/weapons.ts` and
-`src/sim/tuning.ts`.
+Pedestrians are not placed in the map: the game spawns them on random sidewalk tiles at start and
+replaces the dead ones out of sight. Weapons, car health, explosion strength and pedestrian
+behaviour (count, speeds, scare ranges) are tuned in `src/sim/weapons.ts` and `src/sim/tuning.ts`.
 
 ## Story
 

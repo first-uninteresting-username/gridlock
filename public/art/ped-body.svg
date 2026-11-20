@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="10" height="16" viewBox="0 0 10 16">
+  <!-- White so the game can tint it to each pedestrian's shirt colour. -->
+  <ellipse cx="5" cy="8" rx="5" ry="8" fill="#fff"/>
+</svg>
