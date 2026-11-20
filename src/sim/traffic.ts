@@ -121,6 +121,7 @@ export class Traffic {
       steer: clamp(diff / TRAFFIC.steerRange, -1, 1),
       handbrake: false,
       fire: false,
+      gadget: false,
       sprint: false,
       aim: null,
       moveX: 0,

@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { CAR_MODELS, CAR_MODEL_IDS, type CarModelId } from '../sim/models';
 import { CAR_ART } from './pixelart/cars';
 import { GLYPH_ART, ICON_ART } from './pixelart/font';
-import { CORPSE_ART, DRIVER_BODY_ART, GUN_PISTOL_ART, GUN_SMG_ART, PED_BODY_ART, PED_HEAD_ART, PLAYER_BODY_ART, PLAYER_FOOT_ART, PLAYER_HEAD_ART, POLICE_BODY_ART, POLICE_HEAD_ART } from './pixelart/people';
+import { CORPSE_ART, DRIVER_BODY_ART, FIST_ART, GUN_PISTOL_ART, GUN_SMG_ART, KNIFE_ART, PED_BODY_ART, PED_HEAD_ART, PLAYER_BODY_ART, PLAYER_FOOT_ART, PLAYER_HEAD_ART, POLICE_BODY_ART, POLICE_HEAD_ART } from './pixelart/people';
 import { mapHeight, mapWidth, paintPixelMap, type PixelMap } from './pixelart/pixelMap';
 import { AMMO_ART, BLOOD_ART, CASH_ART, PICKUP_ART, WHEEL_ART } from './pixelart/props';
 
@@ -21,6 +21,8 @@ const FIXED_SPRITES = {
   'player-head': PLAYER_HEAD_ART,
   'gun-pistol': GUN_PISTOL_ART,
   'gun-smg': GUN_SMG_ART,
+  'hand-fists': FIST_ART,
+  'knife': KNIFE_ART,
   'ped-body': PED_BODY_ART,
   'ped-head': PED_HEAD_ART,
   'police-body': POLICE_BODY_ART,

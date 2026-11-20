@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { FONT_ADVANCE, glyphKey } from '../render/pixelart/font';
+import { GADGET_SLOT_COUNT, WEAPON_SLOT_COUNT, type WeaponId } from '../sim/weapons';
 import { PixelText, SHADOW_COLOR } from './PixelText';
 
 /** Screen-space pixel-art HUD: bitmap text, wanted stars and a cash icon, drawn by the UI scene. */
@@ -10,9 +12,46 @@ const STAR_SIZE = 9;
 const STAR_GAP = 1;
 const COIN_SIZE = 7;
 const CASH_TEXT_X = COIN_SIZE + 2;
+const SLOTS_Y = 38;
+/** A slot is a 5x7 digit, an 8x5 icon, and a small gap. */
+const SLOT_CELL = 16;
+const SLOT_ICON_X = FONT_ADVANCE;
+const GADGET_LABEL_GAP = 8;
 
 const TEXT_COLOR = 0xeeeeee;
 const CASH_COLOR = 0x6fdc8c;
+const SLOT_ACTIVE_COLOR = 0xffd23f;
+const SLOT_HELD_COLOR = 0xfff1a8;
+const SLOT_IDLE_COLOR = 0x8a94a3;
+
+const WEAPON_ICONS: Record<WeaponId, string> = {
+  fists: 'hud-fists',
+  knife: 'hud-knife',
+  pistol: 'hud-pistol',
+  smg: 'hud-smg',
+};
+
+/** One numbered slot in the loadout strip: a key-cap digit and a tinted weapon/gadget icon. */
+class Slot {
+  private readonly digitShadow: Phaser.GameObjects.Image;
+  private readonly digit: Phaser.GameObjects.Image;
+  private readonly iconShadow: Phaser.GameObjects.Image;
+  private readonly icon: Phaser.GameObjects.Image;
+
+  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, x: number, y: number, label: string) {
+    this.digitShadow = scene.add.image(x + 1, y + 1, glyphKey(label)).setTint(SHADOW_COLOR);
+    this.iconShadow = scene.add.image(x + SLOT_ICON_X + 1, y + 1, 'hud-slot-empty').setTint(SHADOW_COLOR);
+    this.digit = scene.add.image(x, y, glyphKey(label));
+    this.icon = scene.add.image(x + SLOT_ICON_X, y, 'hud-slot-empty');
+    layer.add([this.digitShadow, this.iconShadow, this.digit, this.icon]);
+  }
+
+  set(texture: string, tint: number): void {
+    this.iconShadow.setTexture(texture);
+    this.icon.setTexture(texture).setTint(tint);
+    this.digit.setTint(tint);
+  }
+}
 
 type Star = { shadow: Phaser.GameObjects.Image; on: Phaser.GameObjects.Image; off: Phaser.GameObjects.Image };
 
@@ -20,6 +59,8 @@ export class Hud {
   private readonly root: Phaser.GameObjects.Container;
   private readonly status: PixelText;
   private readonly cash: PixelText;
+  private readonly weaponSlots: Slot[] = [];
+  private readonly gadgetSlots: Slot[] = [];
   private readonly stars: Star[] = [];
   private lastWanted = -1;
   private lastMax = -1;
@@ -33,6 +74,29 @@ export class Hud {
 
     this.root.add(scene.add.image(1, CASH_Y + 1, 'hud-coin').setTint(SHADOW_COLOR));
     this.root.add(scene.add.image(0, CASH_Y, 'hud-coin'));
+
+    for (let i = 0; i < WEAPON_SLOT_COUNT; i++) {
+      this.weaponSlots.push(new Slot(scene, this.root, i * SLOT_CELL, SLOTS_Y, String(i + 1)));
+    }
+    const gadgetX = WEAPON_SLOT_COUNT * SLOT_CELL + GADGET_LABEL_GAP;
+    this.root.add(scene.add.image(1, SLOTS_Y + 1, glyphKey('G')).setTint(SHADOW_COLOR));
+    this.root.add(scene.add.image(0, SLOTS_Y, glyphKey('G')).setTint(TEXT_COLOR));
+    for (let i = 0; i < GADGET_SLOT_COUNT; i++) {
+      this.gadgetSlots.push(new Slot(scene, this.root, gadgetX + FONT_ADVANCE + i * SLOT_CELL, SLOTS_Y, String(i + 1)));
+    }
+  }
+
+  /** Highlights the selected weapon and gadget slots; a held right mouse button lights up the gadget. */
+  setLoadout(weapons: readonly (WeaponId | null)[], weaponSlot: number, gadgetSlot: number, gadgetHeld: boolean): void {
+    this.weaponSlots.forEach((slot, i) => {
+      // An empty slot is fists, so show the same icon rather than a blank frame.
+      const weapon = weapons[i] ?? 'fists';
+      slot.set(WEAPON_ICONS[weapon], i === weaponSlot ? SLOT_ACTIVE_COLOR : SLOT_IDLE_COLOR);
+    });
+    this.gadgetSlots.forEach((slot, i) => {
+      const tint = i !== gadgetSlot ? SLOT_IDLE_COLOR : gadgetHeld ? SLOT_HELD_COLOR : SLOT_ACTIVE_COLOR;
+      slot.set('hud-slot-empty', tint);
+    });
   }
 
   setStatus(text: string): void {

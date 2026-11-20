@@ -11,7 +11,7 @@ import { carSpeed, createCar } from '../sim/car';
 import { createDriver } from '../sim/driver';
 import { createPlayer } from '../sim/player';
 import { MAX_WANTED, Simulation, type Pickup } from '../sim/Simulation';
-import { WEAPONS } from '../sim/weapons';
+import { slotWeapon, WEAPONS } from '../sim/weapons';
 import { CAR_MODELS } from '../sim/models';
 import { CAR, KMH_PER_PX, PED } from '../sim/tuning';
 import type { Input } from '../sim/types';
@@ -89,9 +89,35 @@ export class GameScene extends Phaser.Scene {
     kb.on('keydown-E', toggle);
     kb.on('keydown-F', toggle);
     kb.on('keydown-ENTER', toggle);
-    kb.on('keydown-Q', () => { if (!this.menu.open) this.sim.cycleWeapon(); });
     kb.on('keydown-R', (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantRob = true; });
     kb.on('keydown-ESC', () => this.menu.toggle());
+
+    // 1-4 pick a weapon slot directly; Ctrl + 1/2 picks a gadget slot.
+    const selectSlot = (slot: number) => (e: KeyboardEvent) => {
+      if (this.menu.open || e.repeat) return;
+      if (e.ctrlKey) {
+        e.preventDefault(); // Ctrl + a number would otherwise switch browser tabs
+        this.sim.selectGadgetSlot(slot - 1);
+      } else {
+        this.sim.selectWeaponSlot(slot - 1);
+      }
+    };
+    kb.on('keydown-ONE', selectSlot(1));
+    kb.on('keydown-TWO', selectSlot(2));
+    kb.on('keydown-THREE', selectSlot(3));
+    kb.on('keydown-FOUR', selectSlot(4));
+
+    // Wheel cycles weapon slots; Ctrl + wheel cycles gadget slots. Ctrl + wheel would otherwise
+    // zoom the browser page, so prevent the default even when the menu (and its scroll) is open.
+    this.input.on('wheel', (ptr: Phaser.Input.Pointer) => {
+      const e = ptr.event;
+      if (!(e instanceof WheelEvent)) return;
+      e.preventDefault();
+      if (this.menu.open) return;
+      const dir: -1 | 1 = ptr.deltaY > 0 ? 1 : -1;
+      if (e.ctrlKey) this.sim.cycleGadget(dir);
+      else this.sim.cycleWeapon(dir);
+    });
 
     this.input.mouse?.disableContextMenu();
     this.input.on('pointermove', () => { this.pointerSeen = true; });
@@ -120,6 +146,7 @@ export class GameScene extends Phaser.Scene {
       handbrake: k.SPACE.isDown,
       sprint: k.SHIFT.isDown,
       fire: firing,
+      gadget: ptr.rightButtonDown(), // reserved for gadget use; no gadget has behaviour yet
       aim,
       moveX: (right ? 1 : 0) - (left ? 1 : 0),
       moveY: (down ? 1 : 0) - (up ? 1 : 0),
@@ -154,18 +181,20 @@ export class GameScene extends Phaser.Scene {
       this.pickupViews.push(new PickupView(this, this.sim.pickups[this.pickupViews.length]));
     }
     for (const v of this.pickupViews) v.sync(time / 1000);
-    this.playerView.sync(this.sim.arsenal.current);
+    const ars = this.sim.arsenal, weapon = slotWeapon(ars.weapons, ars.weaponSlot);
+    this.playerView.sync(weapon);
     this.tooltip.show(this.menu.open ? null : this.sim.robTarget());
     this.tooltip.sync();
     this.effects.update(frame, this.sim.cars, this.sim.bullets);
     this.sim.view = this.cameras.main.worldView; // replacement pedestrians appear outside this
     this.buildings.draw(this.rig.x, this.rig.y, this.cameras.main.worldView);
-    const ars = this.sim.arsenal, ammo = ars.ammo[ars.current] ?? 0;
     this.hud.setWanted(this.sim.wanted, MAX_WANTED);
     this.hud.setCash(this.sim.cash);
+    this.hud.setLoadout(ars.weapons, ars.weaponSlot, ars.gadgetSlot, ars.gadgetHeld);
+    const ammo = ars.ammo[weapon] ?? 0;
     this.hud.setStatus(car
       ? `Driving a ${car.model.name} · ${Math.round(carSpeed(car) * KMH_PER_PX)} km/h${car.burning !== null ? ' · ON FIRE, get out!' : ''}`
-      : `On foot · ${WEAPONS[ars.current].name} ${ammo === Infinity ? '∞' : ammo}`);
+      : `On foot · ${WEAPONS[weapon].name} ${ammo === Infinity ? '∞' : ammo}`);
     this.hud.sync();
     this.menu.sync();
   }
