@@ -14,6 +14,9 @@ export interface WeaponDef {
   readonly range: number;
 }
 
+/** Rounds the player starts with. The pistol is resupplied by weapon pickups and robbery loot. */
+export const PISTOL_STARTING_AMMO = 24;
+
 /** In cycling order. */
 export const WEAPONS: Record<WeaponId, WeaponDef> = {
   pistol: { id: 'pistol', name: 'Pistol', damage: 12, interval: 0.25, bulletSpeed: 1400, spread: 0.02, auto: false, range: 700 },
@@ -31,7 +34,7 @@ export interface Arsenal {
   triggerHeld: boolean;
 }
 
-export const createArsenal = (): Arsenal => ({ ammo: { pistol: Infinity }, current: 'pistol', cooldown: 0, triggerHeld: false });
+export const createArsenal = (): Arsenal => ({ ammo: { pistol: PISTOL_STARTING_AMMO }, current: 'pistol', cooldown: 0, triggerHeld: false });
 
 export interface Bullet {
   x: number;
