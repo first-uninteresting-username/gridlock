@@ -31,18 +31,20 @@ export function collideCars(a: Car, b: Car, world: SolidQuery): boolean {
   }
   if (dx * nx + dy * ny < 0) { nx = -nx; ny = -ny; } // normal points from a to b
 
-  // Split the push; if one car is against a wall the other takes all of it.
-  const h = best / 2;
-  const okA = tryPush(a, -nx * h, -ny * h, world);
-  const okB = tryPush(b, nx * h, ny * h, world);
-  if (!okA) tryPush(b, nx * h, ny * h, world);
-  if (!okB) tryPush(a, -nx * h, -ny * h, world);
+  // Split the push by weight (the lighter car moves more); if one car is against a wall the
+  // other takes all of it.
+  const ia = 1 / a.model.mass, ib = 1 / b.model.mass, share = ia + ib;
+  const pushA = (best * ia) / share, pushB = (best * ib) / share;
+  const okA = tryPush(a, -nx * pushA, -ny * pushA, world);
+  const okB = tryPush(b, nx * pushB, ny * pushB, world);
+  if (!okA) tryPush(b, nx * (best - pushB), ny * (best - pushB), world);
+  if (!okB) tryPush(a, -nx * (best - pushA), -ny * (best - pushA), world);
 
   const closing = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
   if (closing < 0) {
-    const j = (-(1 + CAR.carBounce) * closing) / 2;
-    a.vx -= j * nx; a.vy -= j * ny;
-    b.vx += j * nx; b.vy += j * ny;
+    const j = (-(1 + CAR.carBounce) * closing) / share;
+    a.vx -= j * ia * nx; a.vy -= j * ia * ny;
+    b.vx += j * ib * nx; b.vy += j * ib * ny;
   }
   return true;
 }

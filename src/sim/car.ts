@@ -1,4 +1,5 @@
-import { CAR, DAMAGE } from './tuning';
+import { CAR_MODELS, type CarModel } from './models';
+import { CAR } from './tuning';
 import type { Input, SolidQuery } from './types';
 
 export interface Car {
@@ -8,18 +9,26 @@ export interface Car {
   a: number;
   vx: number;
   vy: number;
+  readonly model: CarModel;
+  /** Half length and half width of the car's box, copied from the model. */
   readonly hl: number;
   readonly hw: number;
   readonly color: number;
   health: number;
+  readonly maxHealth: number;
+  /** Eased steering input (-1..1), kept so the front wheels can turn. */
+  steer: number;
   /** Seconds until it explodes, or null if not on fire. */
   burning: number | null;
   /** Burnt-out shell: cannot be entered or driven. */
   wrecked: boolean;
 }
 
-export function createCar(x: number, y: number, a: number, color: number): Car {
-  return { x, y, a, vx: 0, vy: 0, hl: CAR.halfLength, hw: CAR.halfWidth, color, health: DAMAGE.carHealth, burning: null, wrecked: false };
+export function createCar(x: number, y: number, a: number, color: number, model: CarModel = CAR_MODELS.sedan): Car {
+  return {
+    x, y, a, vx: 0, vy: 0, model, hl: model.halfLength, hw: model.halfWidth, color,
+    health: model.health, maxHealth: model.health, steer: 0, burning: null, wrecked: false,
+  };
 }
 
 /** Corners plus the middle of each long side, used for wall checks and SAT. */
@@ -54,22 +63,24 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
 
 /** Advances one car. Pass `null` input for parked / driverless cars. */
 export function stepCar(c: Car, dt: number, input: Input | null, world: SolidQuery): void {
+  const H = c.model.handling;
   const fx = Math.cos(c.a), fy = Math.sin(c.a), rx = -fy, ry = fx;
   let vf = c.vx * fx + c.vy * fy; // forward speed
   let vr = c.vx * rx + c.vy * ry; // sideways (slip) speed
   const th = input?.throttle ?? 0, st = input?.steer ?? 0, hb = input?.handbrake ?? false;
+  c.steer += (st - c.steer) * Math.min(1, 14 * dt);
 
-  if (th > 0) vf += (vf < -5 ? CAR.brake : CAR.accel) * dt;
-  else if (th < 0) vf -= (vf > 5 ? CAR.brake : CAR.reverseAccel) * dt;
-  else vf -= Math.sign(vf) * Math.min(Math.abs(vf), CAR.coastDrag * dt);
-  if (hb) vf -= Math.sign(vf) * Math.min(Math.abs(vf), CAR.handbrakeDrag * dt);
-  vf = clamp(vf, -CAR.maxReverse, CAR.maxSpeed);
-  vr *= Math.exp(-(hb ? CAR.handbrakeGrip : CAR.grip) * dt);
+  if (th > 0) vf += (vf < -5 ? H.brake : H.accel) * dt;
+  else if (th < 0) vf -= (vf > 5 ? H.brake : H.reverseAccel) * dt;
+  else vf -= Math.sign(vf) * Math.min(Math.abs(vf), H.coastDrag * dt);
+  if (hb) vf -= Math.sign(vf) * Math.min(Math.abs(vf), H.handbrakeDrag * dt);
+  vf = clamp(vf, -H.maxReverse, H.maxSpeed);
+  vr *= Math.exp(-(hb ? H.handbrakeGrip : H.grip) * dt);
 
   // Steering scales with speed (no turning on the spot) and softens near top speed.
-  const turn = st * CAR.steerRate * clamp(vf / 120, -1, 1)
-    * (1 - 0.35 * Math.min(Math.abs(vf) / CAR.maxSpeed, 1))
-    * (hb ? CAR.handbrakeSteerBoost : 1);
+  const turn = st * H.steerRate * clamp(vf / 120, -1, 1)
+    * (1 - 0.35 * Math.min(Math.abs(vf) / H.maxSpeed, 1))
+    * (hb ? H.handbrakeSteerBoost : 1);
   c.vx = fx * vf + rx * vr;
   c.vy = fy * vf + ry * vr;
 

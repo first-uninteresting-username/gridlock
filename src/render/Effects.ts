@@ -69,8 +69,8 @@ export class Effects {
         if (Math.random() < 14 * dt) this.add(c.x + rand(8), c.y + rand(8), { life: 1.4, r: 6, grow: 22, color: 0x2e2e2e, alpha: 0.55, vx: rand(15), vy: rand(15) });
       } else if (c.wrecked) {
         if (Math.random() < 5 * dt) this.add(c.x + rand(8), c.y + rand(6), { life: 1.8, r: 4, grow: 16, color: 0x2e2e2e, alpha: 0.4, vx: rand(10), vy: rand(10) });
-      } else if (c.health < DAMAGE.smokeBelow) {
-        const heavy = c.health < DAMAGE.smokeBelow / 2;
+      } else if (c.health < c.maxHealth * DAMAGE.smokeBelow) {
+        const heavy = c.health < (c.maxHealth * DAMAGE.smokeBelow) / 2;
         if (Math.random() < (heavy ? 14 : 6) * dt) {
           const fx = Math.cos(c.a) * c.hl * 0.7, fy = Math.sin(c.a) * c.hl * 0.7; // smoke from the bonnet
           this.add(c.x + fx, c.y + fy, { life: 1.2, r: 4, grow: 18, color: heavy ? 0x555555 : 0x9a9a9a, alpha: 0.45, vx: rand(12), vy: rand(12) });
