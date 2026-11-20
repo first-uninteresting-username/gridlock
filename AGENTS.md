@@ -7,6 +7,9 @@
 - Do not create tests: no test files, test directories, or test frameworks/dependencies (the project
   has none). Verify changes with `npm run check` and by running the game instead.
 - Do not add `Co-Authored-By` trailers (or any other AI attribution) to commit messages or PRs.
+- Skills for this routine live in `.agents/skills/` (`.claude/skills` links to it): `gridlock-workflow`
+  (start a branch, ship a PR), `gridlock-verify` (check and run the game), `gridlock-merge` (only when
+  asked to merge) and `gridlock-svg-art` (art rules and the house style).
 
 ## Code maintainability
 
