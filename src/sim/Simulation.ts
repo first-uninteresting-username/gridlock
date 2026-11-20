@@ -36,6 +36,12 @@ export type SimEvent =
   | { type: 'busted'; x: number; y: number }
   | { type: 'playerDown'; x: number; y: number };
 
+/** The context action the general action key would perform, plus the thing it applies to. */
+export type GeneralAction =
+  | { readonly kind: 'exit'; readonly target: Car }
+  | { readonly kind: 'rob'; readonly target: Pedestrian }
+  | { readonly kind: 'enter'; readonly target: Car };
+
 /** Highest wanted level. */
 export const MAX_WANTED = 5;
 
@@ -141,6 +147,30 @@ export class Simulation {
     }
     this.dropLoot(victim.x, victim.y);
     return true;
+  }
+
+  /**
+   * What the general action key would do right now. The key and the on-screen prompt both read from
+   * this, so the prompt can never advertise an action the key would not perform.
+   */
+  generalAction(): GeneralAction | null {
+    const p = this.player;
+    if (p.car) return { kind: 'exit', target: p.car };
+    const victim = this.robTarget();
+    if (victim) return { kind: 'rob', target: victim };
+    const car = findCarToEnter(p, this.cars);
+    return car ? { kind: 'enter', target: car } : null;
+  }
+
+  /** Perform the general action for the current context. Returns false when there is nothing to do. */
+  act(): boolean {
+    const action = this.generalAction();
+    if (!action) return false;
+    switch (action.kind) {
+      case 'exit':
+      case 'enter': return this.toggleCar();
+      case 'rob': return this.robNearest();
+    }
   }
 
   /** Victims leave a small cash bundle and, now and then, ammo for a weapon the player can use. */

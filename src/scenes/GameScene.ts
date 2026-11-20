@@ -41,7 +41,7 @@ export class GameScene extends Phaser.Scene {
   private pointerSeen = false;
   private keys!: Keys;
   private wantToggle = false;
-  private wantRob = false;
+  private wantAction = false;
   private acc = 0;
 
   constructor() {
@@ -87,9 +87,9 @@ export class GameScene extends Phaser.Scene {
     this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT', false) as Keys;
     const toggle = (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantToggle = true; };
     kb.on('keydown-E', toggle);
-    kb.on('keydown-F', toggle);
     kb.on('keydown-ENTER', toggle);
-    kb.on('keydown-R', (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantRob = true; });
+    // F is the general action key: exit/enter a car or rob whoever is in reach.
+    kb.on('keydown-F', (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantAction = true; });
     kb.on('keydown-ESC', () => this.menu.toggle());
 
     // 1-4 pick a weapon slot directly; Ctrl + 1/2 picks a gadget slot.
@@ -123,7 +123,7 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointermove', () => { this.pointerSeen = true; });
     this.input.on('pointerdown', () => { this.pointerSeen = true; });
     // Drop held buttons/keys when the menu opens so nothing is stuck on resume.
-    this.menu.onToggle = (open) => { if (open) { this.wantToggle = false; this.wantRob = false; this.acc = 0; } };
+    this.menu.onToggle = (open) => { if (open) { this.wantToggle = false; this.wantAction = false; this.acc = 0; } };
   }
 
   private readInput(): Input {
@@ -157,7 +157,7 @@ export class GameScene extends Phaser.Scene {
     const frame = Math.min(deltaMs / 1000, MAX_FRAME);
     if (!this.menu.open) {
       if (this.wantToggle) { this.wantToggle = false; this.sim.toggleCar(); }
-      if (this.wantRob) { this.wantRob = false; this.sim.robNearest(); }
+      if (this.wantAction) { this.wantAction = false; this.sim.act(); }
       const input = this.readInput();
       this.acc += frame;
       while (this.acc >= STEP) { this.sim.step(STEP, input); this.acc -= STEP; }
@@ -183,7 +183,7 @@ export class GameScene extends Phaser.Scene {
     for (const v of this.pickupViews) v.sync(time / 1000);
     const ars = this.sim.arsenal, weapon = slotWeapon(ars.weapons, ars.weaponSlot);
     this.playerView.sync(weapon);
-    this.tooltip.show(this.menu.open ? null : this.sim.robTarget());
+    this.tooltip.show(this.menu.open ? null : this.sim.generalAction());
     this.tooltip.sync();
     this.effects.update(frame, this.sim.cars, this.sim.bullets);
     this.sim.view = this.cameras.main.worldView; // replacement pedestrians appear outside this

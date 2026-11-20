@@ -25,8 +25,8 @@ $100 and sends you back to the start. Killed officers drop SMG ammo.
 | Mouse wheel / 1–4 | Cycle weapon slots, or select one directly |
 | Ctrl + wheel / 1 2 | Cycle or select a gadget slot (gadgets have no behaviour yet) |
 | Right click | Use the selected gadget (not implemented yet) |
-| E / F / Enter | Get into the nearest car, or get out |
-| R | Rob a nearby pedestrian (not police; a prompt appears when one is close enough) |
+| E / Enter | Get into the nearest car, or get out |
+| F | General action: rob a nearby pedestrian (not police; a prompt appears when one is close enough), otherwise get in/out of the nearest car |
 | Esc | Menu: controls and settings (pauses the game) |
 
 The HUD strip at the top left shows the four weapon slots and two empty gadget slots; the selected
