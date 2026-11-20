@@ -26,6 +26,15 @@ export const PLAYER = {
 /** px/s to the km/h shown on the HUD. */
 export const KMH_PER_PX = 0.25;
 
+/** Where a shot starts, relative to the shooter's centre. */
+export const MUZZLE = {
+  /** On foot: forward and to the right, where the gun is held. */
+  footForward: 14,
+  footSide: 4,
+  /** In a car: how far past its outer edge, along the aim direction, the shot begins. */
+  carMargin: 6,
+} as const;
+
 export const DAMAGE = {
   /** Below this fraction of its full health a car smokes. */
   smokeBelow: 0.45,
