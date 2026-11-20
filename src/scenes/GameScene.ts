@@ -20,7 +20,7 @@ import { buildCityData, type TiledMap } from '../world/tiled';
 const STEP = 1 / 120; // fixed simulation step
 const MAX_FRAME = 0.1; // ignore longer gaps (tab switch) instead of fast-forwarding
 
-type Keys = Record<'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'SPACE', Phaser.Input.Keyboard.Key>;
+type Keys = Record<'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'SPACE' | 'SHIFT', Phaser.Input.Keyboard.Key>;
 
 export class GameScene extends Phaser.Scene {
   private sim!: Simulation;
@@ -72,7 +72,7 @@ export class GameScene extends Phaser.Scene {
     this.scale.on('resize', (size: Phaser.Structs.Size) => cam.setSize(size.width, size.height));
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE') as Keys;
+    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT') as Keys;
     const toggle = (e: KeyboardEvent) => { if (!e.repeat) this.wantToggle = true; };
     kb.on('keydown-E', toggle);
     kb.on('keydown-F', toggle);
@@ -102,6 +102,7 @@ export class GameScene extends Phaser.Scene {
       throttle: (up ? 1 : 0) - (down ? 1 : 0),
       steer: (right ? 1 : 0) - (left ? 1 : 0),
       handbrake: k.SPACE.isDown,
+      sprint: k.SHIFT.isDown,
       fire: k.SPACE.isDown || (aim !== null && ptr.leftButtonDown()), // Space shoots on foot and is the handbrake in a car
       aim,
       moveX: (right ? 1 : 0) - (left ? 1 : 0),

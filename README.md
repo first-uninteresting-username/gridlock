@@ -14,6 +14,7 @@ cars, and can be shot or run over.
 | Input | Action |
 |---|---|
 | Arrows / WASD | Drive; on foot, walk (with mouse aim: move in screen directions; without: up/down = forward/back, left/right = turn) |
+| Shift | Sprint while walking forward (on foot) |
 | Mouse | Aim on foot (turn off in the menu to rotate with A / D instead) |
 | Left click / Space | Shoot (on foot); Space is also the handbrake in a car |
 | E / F / Enter | Get into the nearest car, or get out |
