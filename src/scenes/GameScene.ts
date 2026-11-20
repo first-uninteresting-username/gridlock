@@ -76,8 +76,9 @@ export class GameScene extends Phaser.Scene {
     this.scale.on('resize', (size: Phaser.Structs.Size) => cam.setSize(size.width, size.height));
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT') as Keys;
-    const toggle = (e: KeyboardEvent) => { if (!e.repeat) this.wantToggle = true; };
+    // No capture: the DOM pause menu needs these keys for its own focus navigation.
+    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT', false) as Keys;
+    const toggle = (e: KeyboardEvent) => { if (!e.repeat && !this.menu.open) this.wantToggle = true; };
     kb.on('keydown-E', toggle);
     kb.on('keydown-F', toggle);
     kb.on('keydown-ENTER', toggle);

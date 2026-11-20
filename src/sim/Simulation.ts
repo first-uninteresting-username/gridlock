@@ -89,12 +89,14 @@ export class Simulation {
     const car = findCarToEnter(p, this.cars);
     if (!car) return false;
     p.car = car;
+    car.driver = null; // the seat belongs to the player now; turning the old driver loose is separate work
     return true;
   }
 
   /** Switch to the next weapon that has ammo. */
   cycleWeapon(): void {
     const owned = WEAPON_ORDER.filter((w) => (this.arsenal.ammo[w] ?? 0) > 0);
+    if (owned.length === 0) return;
     const i = owned.indexOf(this.arsenal.current);
     this.arsenal.current = owned[(i + 1) % owned.length];
     this.arsenal.cooldown = 0;
