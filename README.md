@@ -21,8 +21,8 @@ and sends you back to the start. Killed officers drop SMG ammo.
 | Shift | Sprint while walking forward (on foot) |
 | Mouse | Aim on foot or out of a car window (turn off in the menu to rotate with A / D on foot) |
 | Left click / Space | Shoot. In a car, left click shoots toward the mouse; Space is the handbrake |
-| E / F / Enter | Get into the nearest car, or get out |
-| R | Rob a nearby pedestrian (a prompt appears when one is close enough) |
+| E / Enter | Get into the nearest car, or get out |
+| F | General action: rob a nearby pedestrian when one is close enough, otherwise get in/out of the nearest car |
 | Q | Switch weapon |
 | Esc | Menu: controls and settings (pauses the game) |
 
