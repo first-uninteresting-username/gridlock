@@ -12,6 +12,8 @@ const shade = (h, k) => '#' + hex(h).map((c) => Math.min(255, c * k | 0).toStrin
 const ROAD = '#3a3d42', ROAD_DARK = '#34373c', ROAD_LIGHT = '#404348', DASH = '#d8c25a';
 const WALK = '#9a968c', WALK_EDGE = '#8e8a81', WALK_LIGHT = '#a39f95';
 const GRASS = '#4f7a3a', GRASS_DARK = '#446c33', GRASS_LIGHT = '#5b8a45';
+const PAINT = '#d8d3c4'; // muted white for crosswalks, bays and arrows
+const WATER = '#39596c', WATER_DARK = '#2f4b5c', WATER_LIGHT = '#43677b';
 const PIP = '#1b2430';
 
 const N = T / ART_PIXEL; // art pixels per tile side
@@ -55,12 +57,49 @@ function grassTile() {
   return g;
 }
 
+function waterTile() {
+  const g = grid(WATER);
+  // A few long ripples rather than speckle: a pond should read as calm water at a glance.
+  rect(g, 2, 5, 10, 1, WATER_LIGHT);
+  rect(g, 17, 8, 9, 1, WATER_DARK);
+  rect(g, 6, 14, 11, 1, WATER_LIGHT);
+  rect(g, 22, 18, 8, 1, WATER_DARK);
+  rect(g, 1, 23, 9, 1, WATER_LIGHT);
+  rect(g, 18, 27, 11, 1, WATER_DARK);
+  return g;
+}
+
+/** Bars start on the tile edges so neighbouring crosswalk tiles join without a seam. */
+function crosswalkTile(horizontal) {
+  const g = roadTile();
+  for (let i = 0; i < N; i += 5) {
+    if (horizontal) rect(g, i, 0, 2, N, PAINT);
+    else rect(g, 0, i, N, 2, PAINT);
+  }
+  return g;
+}
+
+function parkingTile() {
+  const g = roadTile();
+  rect(g, 0, 0, 1, N - 3, PAINT);
+  rect(g, N - 1, 0, 1, N - 3, PAINT);
+  rect(g, 0, N - 3, N, 1, PAINT);
+  return g;
+}
+
+function arrowTile() {
+  const g = roadTile();
+  rect(g, 6, 14, 14, 4, PAINT);
+  for (let d = 0; d <= 3; d++) rect(g, 28 - 3 * d, 16 - d, 2 + 3 * d, 1 + 2 * d, PAINT);
+  return g;
+}
+
 // A building tile only shows in Tiled: in the game its roof is drawn over it with a lean.
 function buildingTile(t) {
   const g = grid(shade(t.roof, 0.8));
   rect(g, 2, 2, N - 4, N - 4, t.roof);
   rect(g, 2, 2, N - 4, 1, shade(t.roof, 1.1)); // lit top edge
-  for (let i = 0; i <= t.level; i++) rect(g, 5 + 6 * i, 5, 4, 4, PIP); // pips: one to three for low / mid / tall
+  for (let i = 0; i <= t.level; i++) rect(g, 5 + 6 * i, 5, 4, 4, PIP); // one pip per height level, low to tower
   return g;
 }
 
@@ -72,6 +111,11 @@ function tilePixels(t) {
     case TILE.DASH_V: { const g = roadTile(); rect(g, N - 2, 4, 2, 14, DASH); return g; }
     case TILE.SIDEWALK: return sidewalkTile();
     case TILE.GRASS: return grassTile();
+    case TILE.CROSSWALK_H: return crosswalkTile(true);
+    case TILE.CROSSWALK_V: return crosswalkTile(false);
+    case TILE.PARKING: return parkingTile();
+    case TILE.ARROW: return arrowTile();
+    case TILE.WATER: return waterTile();
     default: return buildingTile(t);
   }
 }

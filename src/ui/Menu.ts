@@ -40,7 +40,9 @@ const CONTROLS: Control[] = [
   { keys: ['Left click', 'Space'], description: 'Shoot. Space also handbrakes in a car, so use left click to shoot while driving.' },
   { keys: ['E', 'F', 'Enter'], description: 'Get in or out of a car' },
   { keys: ['R'], description: 'Rob a nearby pedestrian (witnesses may call the police)' },
-  { keys: ['Q'], description: 'Switch weapon' },
+  { keys: ['Wheel', '1-4'], description: 'Cycle weapon slots, or select one directly' },
+  { keys: ['Ctrl', 'Wheel', '1', '2'], description: 'Select a gadget slot (gadgets have no behaviour yet)' },
+  { keys: ['Right click'], description: 'Use the selected gadget (not implemented yet)' },
   { keys: ['Esc'], description: 'Open or close this menu; save progress from here. Death returns you to the last save.' },
 ];
 
@@ -266,9 +268,11 @@ export class Menu {
 
     const sw = SAVE_LABEL.length * FONT_ADVANCE + 12;
     const rw = RESUME.length * FONT_ADVANCE + 12;
-    this.saveX = pw - PAD - rw - 6 - sw;
+    // Centre the two buttons as one group, like the single Resume button was.
+    const firstX = Math.round((pw - (sw + 6 + rw)) / 2);
+    this.saveX = firstX;
     this.saveY = y;
-    this.resumeX = pw - PAD - rw;
+    this.resumeX = firstX + sw + 6;
     this.resumeY = y;
     this.saveText.move(this.saveX + 6, y + 4);
     this.resumeText.move(this.resumeX + 6, y + 4);
@@ -283,7 +287,7 @@ export class Menu {
     this.checkRect.setTo(px + PAD, py + this.checkY, CHECK, CHECK);
 
     const mw = MENU_LABEL.length * FONT_ADVANCE + 12;
-    this.menuRect.setTo(this.width - 8 - mw, 8, mw, BTN_H);
+    this.menuRect.setTo(Math.round((this.width - mw) / 2), 8, mw, BTN_H);
     this.menuText.move(this.menuRect.x + 6, this.menuRect.y + 4);
     this.redraw();
   }

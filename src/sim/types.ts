@@ -7,6 +7,8 @@ export interface Input {
   handbrake: boolean;
   /** Trigger held (on foot). */
   fire: boolean;
+  /** Right mouse button: reserved for using the gadget in the active gadget slot. */
+  gadget: boolean;
   /** Sprint held (on foot): move faster while going forward. */
   sprint: boolean;
   /**
@@ -24,8 +26,8 @@ export interface SolidQuery {
   solidAt(x: number, y: number): boolean;
 }
 
-/** The ground a point is on, for things that care what they stand on (pedestrians stay off buildings). */
-export type GroundKind = 'road' | 'sidewalk' | 'grass' | 'building';
+/** The ground a point is on, for things that care what they stand on (pedestrians avoid buildings and water). */
+export type GroundKind = 'road' | 'sidewalk' | 'grass' | 'water' | 'building';
 
 /** A tile grid the simulation can walk around on. */
 export interface World extends SolidQuery {
@@ -36,4 +38,4 @@ export interface World extends SolidQuery {
   kindAt(x: number, y: number): GroundKind | null;
 }
 
-export const NO_INPUT: Input = { throttle: 0, steer: 0, handbrake: false, fire: false, sprint: false, aim: null, moveX: 0, moveY: 0 };
+export const NO_INPUT: Input = { throttle: 0, steer: 0, handbrake: false, fire: false, gadget: false, sprint: false, aim: null, moveX: 0, moveY: 0 };

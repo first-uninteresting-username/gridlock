@@ -1,7 +1,7 @@
-import { isWeaponId, type WeaponId } from './weapons';
+import { GADGET_SLOT_COUNT, isWeaponId, WEAPON_SLOT_COUNT, type GadgetSlots, type WeaponId, type WeaponSlots } from './weapons';
 
 const STORAGE_KEY = 'gridlock.save';
-const VERSION = 1;
+const VERSION = 2;
 
 type SavedPickupBase = { x: number; y: number; respawn: number | null; once?: boolean };
 
@@ -39,7 +39,10 @@ export interface SaveData {
   pickups: SavedPickup[];
   /** null means unlimited ammo: JSON turns Infinity into null. */
   ammo: Partial<Record<WeaponId, number | null>>;
-  current: WeaponId;
+  weapons: WeaponSlots;
+  weaponSlot: number;
+  gadgets: GadgetSlots;
+  gadgetSlot: number;
   wanted: number;
   cash: number;
 }
@@ -56,7 +59,12 @@ export function loadSave(carCount: number, pickupCount: number): SaveData | null
     const save = JSON.parse(raw) as SaveData;
     // Loot dropped during the saved run can leave more pickups than the map has.
     if (save.version !== VERSION || save.cars?.length !== carCount || save.pickups?.length < pickupCount) return null;
-    if (!save.ammo || typeof save.ammo !== 'object' || !isWeaponId(save.current)) return null;
+    if (!save.ammo || typeof save.ammo !== 'object') return null;
+    if (!Array.isArray(save.weapons) || save.weapons.length !== WEAPON_SLOT_COUNT) return null;
+    if (!Array.isArray(save.gadgets) || save.gadgets.length !== GADGET_SLOT_COUNT) return null;
+    if (!Number.isInteger(save.weaponSlot) || save.weaponSlot < 0 || save.weaponSlot >= WEAPON_SLOT_COUNT) return null;
+    if (!Number.isInteger(save.gadgetSlot) || save.gadgetSlot < 0 || save.gadgetSlot >= GADGET_SLOT_COUNT) return null;
+    if (!save.weapons.every((w) => w === null || isWeaponId(w))) return null;
     const p = save.player;
     if (!p || !finite(p.x) || !finite(p.y) || !finite(p.a) || !finite(p.health) || !finite(p.stride)) return null;
     if (p.car !== null && (!Number.isInteger(p.car) || p.car < 0 || p.car >= carCount)) return null;
