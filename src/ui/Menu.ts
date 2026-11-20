@@ -35,8 +35,8 @@ type Control = { keys: string[]; description: string };
 const CONTROLS: Control[] = [
   { keys: ['WASD', 'Arrows'], description: 'Walk and drive. With mouse aim, on foot: move in screen directions.' },
   { keys: ['Shift'], description: 'Sprint while walking forward (on foot)' },
-  { keys: ['Mouse'], description: 'Aim (on foot)' },
-  { keys: ['Left click', 'Space'], description: 'Shoot (on foot). Space is also the handbrake in a car.' },
+  { keys: ['Mouse'], description: 'Aim (on foot, or out of a car window)' },
+  { keys: ['Left click', 'Space'], description: 'Shoot. Space also handbrakes in a car, so use left click to shoot while driving.' },
   { keys: ['E', 'F', 'Enter'], description: 'Get in or out of a car' },
   { keys: ['Q'], description: 'Switch weapon' },
   { keys: ['Esc'], description: 'Open or close this menu' },
