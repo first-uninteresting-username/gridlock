@@ -1,5 +1,6 @@
 // Turns a Tiled map (the raw .tmj JSON) into game data: the tile layer becomes the City, and the
 // object layers become spawns. Works on plain JSON, with no Phaser involved.
+import { CAR_MODELS, CAR_MODEL_IDS, isCarModelId, type CarModelId } from '../sim/models';
 import { isWeaponId, type WeaponId } from '../sim/weapons';
 import { City, TILE_KINDS, type TileDef, type TileKind } from './City';
 
@@ -47,6 +48,8 @@ export interface Spawn {
   /** Radians, 0 = east. Tiled stores degrees in the `heading` property. */
   a: number;
   color?: number;
+  /** Car model; only set for car spawns. */
+  model?: CarModelId;
 }
 
 export interface PickupSpawn {
@@ -85,6 +88,19 @@ export function hash01(x: number, y: number, salt: number): number {
   let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263) + Math.imul(salt, 2147483647)) | 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/** The model named by a car's `model` property, or a weighted pick that stays the same for a given spot. */
+function carModel(o: TiledObject, i: number): CarModelId {
+  const named = prop(o, 'model');
+  if (named !== undefined) {
+    if (!isCarModelId(named)) throw new Error(`Car at ${o.x},${o.y} has unknown model "${String(named)}" (expected ${CAR_MODEL_IDS.join(', ')})`);
+    return named;
+  }
+  const total = CAR_MODEL_IDS.reduce((n, id) => n + CAR_MODELS[id].spawnWeight, 0);
+  let r = hash01(o.x, o.y, i + 1000) * total;
+  for (const id of CAR_MODEL_IDS) if ((r -= CAR_MODELS[id].spawnWeight) < 0) return id;
+  return CAR_MODEL_IDS[0];
 }
 
 const toSpawn = (o: TiledObject, i: number): Spawn => {
@@ -152,7 +168,7 @@ export function buildCityData(map: TiledMap): CityData {
   return {
     city: new City(map.width, map.height, map.tilewidth, cells, defs),
     player: toSpawn(player, 0),
-    cars: objects('cars').map(toSpawn),
+    cars: objects('cars').map((o, i) => ({ ...toSpawn(o, i), model: carModel(o, i) })),
     pickups: objects('pickups').map((o) => {
       const weapon = prop(o, 'weapon'), ammo = prop(o, 'ammo');
       if (!isWeaponId(weapon)) throw new Error(`Pickup at ${o.x},${o.y} has unknown weapon "${String(weapon)}"`);

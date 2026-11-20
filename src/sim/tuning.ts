@@ -1,25 +1,15 @@
 // Gameplay tuning in world pixels and seconds. One map tile is 64 px.
 
+// Per-model size, health and handling live in models.ts; these apply to every car.
 export const CAR = {
-  halfLength: 24,
-  halfWidth: 13,
-  accel: 320,
-  brake: 900,
-  reverseAccel: 220,
-  coastDrag: 120,
-  handbrakeDrag: 450,
-  maxSpeed: 560,
-  maxReverse: 170,
-  /** How fast sideways velocity dies off (1/s). Lower = more drift. */
-  grip: 10,
-  handbrakeGrip: 1.2,
-  /** Turn rate at full lock (rad/s) once the car is rolling. */
-  steerRate: 2.8,
-  handbrakeSteerBoost: 1.5,
   /** Fraction of velocity kept (and reversed) when hitting a wall. */
   wallBounce: 0.3,
   /** Restitution of car-to-car hits. */
   carBounce: 0.3,
+  /** Speed at which the camera is fully zoomed out. */
+  cameraRefSpeed: 560,
+  /** Front wheels turn this far (rad) at full steering lock, for looks only. */
+  wheelLock: 0.5,
 } as const;
 
 export const PLAYER = {
@@ -35,9 +25,8 @@ export const PLAYER = {
 export const KMH_PER_PX = 0.25;
 
 export const DAMAGE = {
-  carHealth: 100,
-  /** Below this health a car smokes. */
-  smokeBelow: 45,
+  /** Below this fraction of its full health a car smokes. */
+  smokeBelow: 0.45,
   /** Seconds a car burns before it explodes. */
   burnTime: 2.2,
   explosionRadius: 130,
