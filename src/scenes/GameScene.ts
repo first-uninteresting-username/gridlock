@@ -12,6 +12,7 @@ import { WEAPONS } from '../sim/weapons';
 import { CAR, KMH_PER_PX } from '../sim/tuning';
 import type { Input } from '../sim/types';
 import { Hud } from '../ui/Hud';
+import { Menu } from '../ui/Menu';
 import { buildCityData, type TiledObject } from '../world/tiled';
 
 const STEP = 1 / 120; // fixed simulation step
@@ -28,6 +29,9 @@ export class GameScene extends Phaser.Scene {
   private buildings!: BuildingLayer;
   private rig!: CameraRig;
   private hud = new Hud();
+  private menu = new Menu();
+  /** Mouse aim only takes over once the pointer has actually moved, so keyboard-only play still works. */
+  private pointerSeen = false;
   private keys!: Keys;
   private wantToggle = false;
   private acc = 0;
@@ -72,25 +76,46 @@ export class GameScene extends Phaser.Scene {
     kb.on('keydown-E', toggle);
     kb.on('keydown-F', toggle);
     kb.on('keydown-ENTER', toggle);
-    kb.on('keydown-Q', () => this.sim.cycleWeapon());
+    kb.on('keydown-Q', () => { if (!this.menu.open) this.sim.cycleWeapon(); });
+    kb.on('keydown-ESC', () => this.menu.toggle());
+
+    this.input.mouse?.disableContextMenu();
+    this.input.on('pointermove', () => { this.pointerSeen = true; });
+    this.input.on('pointerdown', () => { this.pointerSeen = true; });
+    // Drop held buttons/keys when the menu opens so nothing is stuck on resume.
+    this.menu.onToggle = (open) => { if (open) { this.wantToggle = false; this.acc = 0; } };
   }
 
   private readInput(): Input {
-    const k = this.keys;
+    const k = this.keys, ptr = this.input.activePointer;
+    const up = k.W.isDown || k.UP.isDown, down = k.S.isDown || k.DOWN.isDown;
+    const left = k.A.isDown || k.LEFT.isDown, right = k.D.isDown || k.RIGHT.isDown;
+    const p = this.sim.player;
+    // Mouse aim applies on foot only; in a car the keys steer as usual.
+    let aim: number | null = null;
+    if (!p.car && this.pointerSeen && this.menu.mouseAim) {
+      const w = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
+      aim = Math.atan2(w.y - p.y, w.x - p.x);
+    }
     return {
-      throttle: (k.W.isDown || k.UP.isDown ? 1 : 0) - (k.S.isDown || k.DOWN.isDown ? 1 : 0),
-      steer: (k.D.isDown || k.RIGHT.isDown ? 1 : 0) - (k.A.isDown || k.LEFT.isDown ? 1 : 0),
+      throttle: (up ? 1 : 0) - (down ? 1 : 0),
+      steer: (right ? 1 : 0) - (left ? 1 : 0),
       handbrake: k.SPACE.isDown,
-      fire: k.SPACE.isDown, // Space shoots on foot and is the handbrake in a car
+      fire: k.SPACE.isDown || (aim !== null && ptr.leftButtonDown()), // Space shoots on foot and is the handbrake in a car
+      aim,
+      moveX: (right ? 1 : 0) - (left ? 1 : 0),
+      moveY: (down ? 1 : 0) - (up ? 1 : 0),
     };
   }
 
   update(time: number, deltaMs: number): void {
     const frame = Math.min(deltaMs / 1000, MAX_FRAME);
-    if (this.wantToggle) { this.wantToggle = false; this.sim.toggleCar(); }
-    const input = this.readInput();
-    this.acc += frame;
-    while (this.acc >= STEP) { this.sim.step(STEP, input); this.acc -= STEP; }
+    if (!this.menu.open) {
+      if (this.wantToggle) { this.wantToggle = false; this.sim.toggleCar(); }
+      const input = this.readInput();
+      this.acc += frame;
+      while (this.acc >= STEP) { this.sim.step(STEP, input); this.acc -= STEP; }
+    }
 
     for (const e of this.sim.events) {
       this.effects.handle(e);
