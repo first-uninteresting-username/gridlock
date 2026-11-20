@@ -6,7 +6,7 @@ import { buildCityData, parseColor, type TiledObject } from '../src/world/tiled'
 const map = JSON.parse(readFileSync(new URL('../public/maps/city.tmj', import.meta.url), 'utf8'));
 const layer = (name: string): TiledObject[] => map.layers.find((l: { name: string }) => l.name === name)?.objects ?? [];
 const data = buildCityData(map.width * map.tilewidth, map.height * map.tileheight, {
-  buildings: layer('buildings'), spawns: layer('spawns'), cars: layer('cars'),
+  buildings: layer('buildings'), spawns: layer('spawns'), cars: layer('cars'), pickups: layer('pickups'),
 });
 
 describe('city map', () => {
@@ -32,5 +32,12 @@ describe('city map', () => {
   it('reads Tiled colours', () => {
     expect(parseColor('#ff8a8f98')).toBe(0x8a8f98);
     expect(parseColor('#8a8f98')).toBe(0x8a8f98);
+  });
+});
+
+describe('city pickups', () => {
+  it('are on open ground and name real weapons', () => {
+    expect(data.pickups.length).toBeGreaterThan(0);
+    for (const k of data.pickups) expect(data.city.solidAt(k.x, k.y)).toBe(false);
   });
 });

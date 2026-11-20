@@ -1,5 +1,6 @@
 // Turns Tiled object layers into game data. Works on the raw Tiled JSON shape, which is also
 // what Phaser's Tilemap#getObjectLayer() returns, so it can be tested without Phaser.
+import { isWeaponId, type WeaponId } from '../sim/weapons';
 import { City, type Building } from './City';
 
 export interface TiledProperty {
@@ -25,10 +26,18 @@ export interface Spawn {
   color?: number;
 }
 
+export interface PickupSpawn {
+  x: number;
+  y: number;
+  weapon: WeaponId;
+  ammo: number;
+}
+
 export interface CityData {
   city: City;
   player: Spawn;
   cars: Spawn[];
+  pickups: PickupSpawn[];
 }
 
 export const CAR_COLORS = [0xc0392b, 0x2e86de, 0xf1c40f, 0x27ae60, 0xecf0f1, 0x8e44ad, 0xe67e22, 0x2c3e50, 0x16a085];
@@ -68,7 +77,7 @@ const toSpawn = (o: TiledObject, i: number): Spawn => {
 export function buildCityData(
   widthPx: number,
   heightPx: number,
-  layers: { buildings: TiledObject[]; spawns: TiledObject[]; cars: TiledObject[] },
+  layers: { buildings: TiledObject[]; spawns: TiledObject[]; cars: TiledObject[]; pickups?: TiledObject[] },
 ): CityData {
   const buildings: Building[] = layers.buildings.map((o) => {
     const h = prop(o, 'height');
@@ -86,5 +95,10 @@ export function buildCityData(
     city: new City(widthPx, heightPx, buildings),
     player: toSpawn(player, 0),
     cars: layers.cars.map(toSpawn),
+    pickups: (layers.pickups ?? []).map((o) => {
+      const weapon = prop(o, 'weapon'), ammo = prop(o, 'ammo');
+      if (!isWeaponId(weapon)) throw new Error(`Pickup at ${o.x},${o.y} has unknown weapon "${String(weapon)}"`);
+      return { x: o.x, y: o.y, weapon, ammo: typeof ammo === 'number' ? ammo : 30 };
+    }),
   };
 }

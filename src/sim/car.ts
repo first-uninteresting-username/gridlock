@@ -1,4 +1,4 @@
-import { CAR } from './tuning';
+import { CAR, DAMAGE } from './tuning';
 import type { Input, SolidQuery } from './types';
 
 export interface Car {
@@ -11,10 +11,15 @@ export interface Car {
   readonly hl: number;
   readonly hw: number;
   readonly color: number;
+  health: number;
+  /** Seconds until it explodes, or null if not on fire. */
+  burning: number | null;
+  /** Burnt-out shell: cannot be entered or driven. */
+  wrecked: boolean;
 }
 
 export function createCar(x: number, y: number, a: number, color: number): Car {
-  return { x, y, a, vx: 0, vy: 0, hl: CAR.halfLength, hw: CAR.halfWidth, color };
+  return { x, y, a, vx: 0, vy: 0, hl: CAR.halfLength, hw: CAR.halfWidth, color, health: DAMAGE.carHealth, burning: null, wrecked: false };
 }
 
 /** Corners plus the middle of each long side, used for wall checks and SAT. */
@@ -29,6 +34,12 @@ export function carPoints(x: number, y: number, a: number, hl: number, hw: numbe
 export function carHitsWorld(c: Car, world: SolidQuery, x = c.x, y = c.y, a = c.a): boolean {
   for (const [px, py] of carPoints(x, y, a, c.hl, c.hw)) if (world.solidAt(px, py)) return true;
   return false;
+}
+
+/** True if the point is inside the car's box (optionally grown by `pad`). */
+export function carContains(c: Car, x: number, y: number, pad = 0): boolean {
+  const [lx, ly] = toCarLocal(c, x, y);
+  return Math.abs(lx) < c.hl + pad && Math.abs(ly) < c.hw + pad;
 }
 
 export const carSpeed = (c: Car): number => Math.hypot(c.vx, c.vy);

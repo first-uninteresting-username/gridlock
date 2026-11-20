@@ -10,8 +10,8 @@
  "tileheight": 64,
  "infinite": false,
  "compressionlevel": -1,
- "nextlayerid": 5,
- "nextobjectid": 94,
+ "nextlayerid": 6,
+ "nextobjectid": 100,
  "layers": [
   {
    "id": 1,
@@ -5116,7 +5116,7 @@
    "draworder": "topdown",
    "objects": [
     {
-     "id": 54,
+     "id": 60,
      "name": "",
      "type": "car",
      "x": 2016,
@@ -5135,7 +5135,7 @@
      ]
     },
     {
-     "id": 55,
+     "id": 61,
      "name": "",
      "type": "car",
      "x": 544,
@@ -5154,7 +5154,7 @@
      ]
     },
     {
-     "id": 56,
+     "id": 62,
      "name": "",
      "type": "car",
      "x": 3552,
@@ -5173,7 +5173,7 @@
      ]
     },
     {
-     "id": 57,
+     "id": 63,
      "name": "",
      "type": "car",
      "x": 3232,
@@ -5192,7 +5192,7 @@
      ]
     },
     {
-     "id": 58,
+     "id": 64,
      "name": "",
      "type": "car",
      "x": 3872,
@@ -5211,125 +5211,11 @@
      ]
     },
     {
-     "id": 59,
+     "id": 65,
      "name": "",
      "type": "car",
      "x": 672,
      "y": 3424,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 90
-      }
-     ]
-    },
-    {
-     "id": 60,
-     "name": "",
-     "type": "car",
-     "x": 32,
-     "y": 352,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 90
-      }
-     ]
-    },
-    {
-     "id": 61,
-     "name": "",
-     "type": "car",
-     "x": 2016,
-     "y": 2400,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": -90
-      }
-     ]
-    },
-    {
-     "id": 62,
-     "name": "",
-     "type": "car",
-     "x": 2720,
-     "y": 3872,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 180
-      }
-     ]
-    },
-    {
-     "id": 63,
-     "name": "",
-     "type": "car",
-     "x": 1632,
-     "y": 3296,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 0
-      }
-     ]
-    },
-    {
-     "id": 64,
-     "name": "",
-     "type": "car",
-     "x": 2912,
-     "y": 1376,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 0
-      }
-     ]
-    },
-    {
-     "id": 65,
-     "name": "",
-     "type": "car",
-     "x": 1312,
-     "y": 2528,
      "width": 0,
      "height": 0,
      "rotation": 0,
@@ -5348,7 +5234,7 @@
      "name": "",
      "type": "car",
      "x": 32,
-     "y": 3424,
+     "y": 352,
      "width": 0,
      "height": 0,
      "rotation": 0,
@@ -5364,6 +5250,120 @@
     },
     {
      "id": 67,
+     "name": "",
+     "type": "car",
+     "x": 2016,
+     "y": 2400,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": -90
+      }
+     ]
+    },
+    {
+     "id": 68,
+     "name": "",
+     "type": "car",
+     "x": 2720,
+     "y": 3872,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 180
+      }
+     ]
+    },
+    {
+     "id": 69,
+     "name": "",
+     "type": "car",
+     "x": 1632,
+     "y": 3296,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 0
+      }
+     ]
+    },
+    {
+     "id": 70,
+     "name": "",
+     "type": "car",
+     "x": 2912,
+     "y": 1376,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 0
+      }
+     ]
+    },
+    {
+     "id": 71,
+     "name": "",
+     "type": "car",
+     "x": 1312,
+     "y": 2528,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 90
+      }
+     ]
+    },
+    {
+     "id": 72,
+     "name": "",
+     "type": "car",
+     "x": 32,
+     "y": 3424,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 90
+      }
+     ]
+    },
+    {
+     "id": 73,
      "name": "",
      "type": "car",
      "x": 2208,
@@ -5382,7 +5382,7 @@
      ]
     },
     {
-     "id": 68,
+     "id": 74,
      "name": "",
      "type": "car",
      "x": 1760,
@@ -5401,7 +5401,7 @@
      ]
     },
     {
-     "id": 69,
+     "id": 75,
      "name": "",
      "type": "car",
      "x": 160,
@@ -5420,7 +5420,7 @@
      ]
     },
     {
-     "id": 70,
+     "id": 76,
      "name": "",
      "type": "car",
      "x": 1952,
@@ -5439,7 +5439,7 @@
      ]
     },
     {
-     "id": 71,
+     "id": 77,
      "name": "",
      "type": "car",
      "x": 2848,
@@ -5458,7 +5458,7 @@
      ]
     },
     {
-     "id": 72,
+     "id": 78,
      "name": "",
      "type": "car",
      "x": 3936,
@@ -5477,7 +5477,7 @@
      ]
     },
     {
-     "id": 73,
+     "id": 79,
      "name": "",
      "type": "car",
      "x": 1312,
@@ -5496,7 +5496,7 @@
      ]
     },
     {
-     "id": 74,
+     "id": 80,
      "name": "",
      "type": "car",
      "x": 1120,
@@ -5515,7 +5515,7 @@
      ]
     },
     {
-     "id": 75,
+     "id": 81,
      "name": "",
      "type": "car",
      "x": 672,
@@ -5534,7 +5534,7 @@
      ]
     },
     {
-     "id": 76,
+     "id": 82,
      "name": "",
      "type": "car",
      "x": 2976,
@@ -5553,7 +5553,7 @@
      ]
     },
     {
-     "id": 77,
+     "id": 83,
      "name": "",
      "type": "car",
      "x": 3488,
@@ -5572,7 +5572,7 @@
      ]
     },
     {
-     "id": 78,
+     "id": 84,
      "name": "",
      "type": "car",
      "x": 1696,
@@ -5591,7 +5591,7 @@
      ]
     },
     {
-     "id": 79,
+     "id": 85,
      "name": "",
      "type": "car",
      "x": 3552,
@@ -5610,7 +5610,7 @@
      ]
     },
     {
-     "id": 80,
+     "id": 86,
      "name": "",
      "type": "car",
      "x": 3232,
@@ -5629,124 +5629,10 @@
      ]
     },
     {
-     "id": 81,
-     "name": "",
-     "type": "car",
-     "x": 3104,
-     "y": 3936,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 0
-      }
-     ]
-    },
-    {
-     "id": 82,
-     "name": "",
-     "type": "car",
-     "x": 1568,
-     "y": 96,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 0
-      }
-     ]
-    },
-    {
-     "id": 83,
-     "name": "",
-     "type": "car",
-     "x": 736,
-     "y": 352,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": -90
-      }
-     ]
-    },
-    {
-     "id": 84,
-     "name": "",
-     "type": "car",
-     "x": 3168,
-     "y": 2656,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 0
-      }
-     ]
-    },
-    {
-     "id": 85,
-     "name": "",
-     "type": "car",
-     "x": 480,
-     "y": 2016,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 0
-      }
-     ]
-    },
-    {
-     "id": 86,
-     "name": "",
-     "type": "car",
-     "x": 3488,
-     "y": 2592,
-     "width": 0,
-     "height": 0,
-     "rotation": 0,
-     "visible": true,
-     "point": true,
-     "properties": [
-      {
-       "name": "heading",
-       "type": "float",
-       "value": 180
-      }
-     ]
-    },
-    {
      "id": 87,
      "name": "",
      "type": "car",
-     "x": 1632,
+     "x": 3104,
      "y": 3936,
      "width": 0,
      "height": 0,
@@ -5765,6 +5651,120 @@
      "id": 88,
      "name": "",
      "type": "car",
+     "x": 1568,
+     "y": 96,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 0
+      }
+     ]
+    },
+    {
+     "id": 89,
+     "name": "",
+     "type": "car",
+     "x": 736,
+     "y": 352,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": -90
+      }
+     ]
+    },
+    {
+     "id": 90,
+     "name": "",
+     "type": "car",
+     "x": 3168,
+     "y": 2656,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 0
+      }
+     ]
+    },
+    {
+     "id": 91,
+     "name": "",
+     "type": "car",
+     "x": 480,
+     "y": 2016,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 0
+      }
+     ]
+    },
+    {
+     "id": 92,
+     "name": "",
+     "type": "car",
+     "x": 3488,
+     "y": 2592,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 180
+      }
+     ]
+    },
+    {
+     "id": 93,
+     "name": "",
+     "type": "car",
+     "x": 1632,
+     "y": 3936,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "heading",
+       "type": "float",
+       "value": 0
+      }
+     ]
+    },
+    {
+     "id": 94,
+     "name": "",
+     "type": "car",
      "x": 800,
      "y": 2656,
      "width": 0,
@@ -5781,7 +5781,7 @@
      ]
     },
     {
-     "id": 89,
+     "id": 95,
      "name": "",
      "type": "car",
      "x": 3104,
@@ -5800,7 +5800,7 @@
      ]
     },
     {
-     "id": 90,
+     "id": 96,
      "name": "",
      "type": "car",
      "x": 96,
@@ -5819,7 +5819,7 @@
      ]
     },
     {
-     "id": 91,
+     "id": 97,
      "name": "",
      "type": "car",
      "x": 1312,
@@ -5838,7 +5838,7 @@
      ]
     },
     {
-     "id": 92,
+     "id": 98,
      "name": "",
      "type": "car",
      "x": 2016,
@@ -5857,7 +5857,7 @@
      ]
     },
     {
-     "id": 93,
+     "id": 99,
      "name": "",
      "type": "car",
      "x": 1376,
@@ -5872,6 +5872,162 @@
        "name": "heading",
        "type": "float",
        "value": -90
+      }
+     ]
+    }
+   ],
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0
+  },
+  {
+   "id": 5,
+   "name": "pickups",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "objects": [
+    {
+     "id": 54,
+     "name": "",
+     "type": "pickup",
+     "x": 2080,
+     "y": 2400,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "smg"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 60
+      }
+     ]
+    },
+    {
+     "id": 55,
+     "name": "",
+     "type": "pickup",
+     "x": 1440,
+     "y": 608,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "smg"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 60
+      }
+     ]
+    },
+    {
+     "id": 56,
+     "name": "",
+     "type": "pickup",
+     "x": 608,
+     "y": 1120,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "smg"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 60
+      }
+     ]
+    },
+    {
+     "id": 57,
+     "name": "",
+     "type": "pickup",
+     "x": 1568,
+     "y": 1888,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "smg"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 60
+      }
+     ]
+    },
+    {
+     "id": 58,
+     "name": "",
+     "type": "pickup",
+     "x": 3424,
+     "y": 1248,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "smg"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 60
+      }
+     ]
+    },
+    {
+     "id": 59,
+     "name": "",
+     "type": "pickup",
+     "x": 1248,
+     "y": 3168,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "weapon",
+       "type": "string",
+       "value": "smg"
+      },
+      {
+       "name": "ammo",
+       "type": "int",
+       "value": 60
       }
      ]
     }

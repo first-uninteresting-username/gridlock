@@ -4,7 +4,8 @@ A top-down city driving game for the browser. Original project in the style of t
 top-down crime games: walk around a city, get into any parked car and drive it.
 
 Current scope is deliberately minimal: walking, entering and leaving cars, arcade driving with a
-handbrake drift, car-to-car and wall collisions, and fake-3D buildings.
+handbrake drift, car-to-car and wall collisions, fake-3D buildings, and guns. Shot cars smoke,
+catch fire and explode, and the blast can set off nearby cars.
 
 ## Controls
 
@@ -12,7 +13,8 @@ handbrake drift, car-to-car and wall collisions, and fake-3D buildings.
 |---|---|
 | Arrows / WASD | Walk or drive (up/down = forward/back, left/right = turn) |
 | E / F / Enter | Get into the nearest car, or get out |
-| Space | Handbrake |
+| Space | Shoot (on foot) / handbrake (driving) |
+| Q | Switch weapon |
 
 ## Development
 
@@ -25,6 +27,9 @@ npm run dev            # http://localhost:5173 with hot reload
 npm run check          # typecheck + tests
 npm run build          # static site in dist/ (open via any static file server)
 ```
+
+In dev builds, `window.gridlock.sim` exposes the simulation in the browser console, for example
+`gridlock.sim.arsenal.ammo.smg = 999`.
 
 ## Layout
 
@@ -55,6 +60,11 @@ Open `public/maps/city.tmj` in [Tiled](https://www.mapeditor.org).
 - **spawns** (object layer): a point named `player`, with optional `heading` in degrees
   (0 = east, 90 = south).
 - **cars** (object layer): points with `heading` and an optional `color`.
+- **pickups** (object layer): points with `weapon` (`smg`) and `ammo`. They respawn 30 s after
+  being collected.
+
+Weapons, car health and explosion strength are tuned in `src/sim/weapons.ts` and
+`src/sim/tuning.ts`.
 
 `npm run gen:city` rebuilds the starter map from scratch and overwrites hand edits.
 

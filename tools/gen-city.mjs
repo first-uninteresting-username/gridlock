@@ -100,18 +100,28 @@ for (let tries = 0; cars.length < 40 && tries < 5000; tries++) {
   const x = tx * T + T / 2, y = ty * T + T / 2;
   if (cars.every((c) => Math.hypot(c.x - x, c.y - y) > 90)) cars.push({ x, y, heading });
 }
+// Weapon pickups on sidewalks: one next to the start, the rest scattered.
+const pickupAt = (x, y) => point('', 'pickup', x, y, [{ name: 'weapon', type: 'string', value: 'smg' }, { name: 'ammo', type: 'int', value: 60 }]);
+const pickupObjects = [pickupAt(startX, startY + 2 * T)];
+for (let tries = 0; pickupObjects.length < 6 && tries < 5000; tries++) {
+  const tx = rnd() * N | 0, ty = rnd() * N | 0;
+  if (ground[ty * N + tx] !== TILE.WALK) continue;
+  const x = tx * T + T / 2, y = ty * T + T / 2;
+  if (pickupObjects.every((o) => Math.hypot(o.x - x, o.y - y) > 10 * T)) pickupObjects.push(pickupAt(x, y));
+}
 const carObjects = cars.map((c) => point('', 'car', c.x, c.y, [{ name: 'heading', type: 'float', value: c.heading }]));
 
 const layer = (id, name, objects) => ({ id, name, type: 'objectgroup', draworder: 'topdown', objects, opacity: 1, visible: true, x: 0, y: 0 });
 const map = {
   type: 'map', version: '1.10', tiledversion: '1.11.0', orientation: 'orthogonal', renderorder: 'right-down',
   width: N, height: N, tilewidth: T, tileheight: T, infinite: false, compressionlevel: -1,
-  nextlayerid: 5, nextobjectid: nextId,
+  nextlayerid: 6, nextobjectid: nextId,
   layers: [
     { id: 1, name: 'ground', type: 'tilelayer', width: N, height: N, x: 0, y: 0, opacity: 1, visible: true, data: ground.map((t) => t + 1) },
     layer(2, 'buildings', buildings),
     layer(3, 'spawns', spawns),
     layer(4, 'cars', carObjects),
+    layer(5, 'pickups', pickupObjects),
   ],
   tilesets: [{ firstgid: 1, name: 'city', image: '../tiles/city.png', imagewidth: IW, imageheight: IH,
     tilewidth: T, tileheight: T, tilecount: COUNT, columns: COUNT, margin: MARGIN, spacing: SPACING }],

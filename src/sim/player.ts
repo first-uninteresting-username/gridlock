@@ -1,4 +1,4 @@
-import { toCarLocal, type Car } from './car';
+import { carContains, toCarLocal, type Car } from './car';
 import { PLAYER } from './tuning';
 import type { Input, SolidQuery } from './types';
 
@@ -21,10 +21,7 @@ const bodyHitsWorld = (world: SolidQuery, x: number, y: number, r: number) =>
   world.solidAt(x - r, y - r) || world.solidAt(x + r, y - r) || world.solidAt(x - r, y + r) || world.solidAt(x + r, y + r);
 
 function overlapsCar(cars: readonly Car[], x: number, y: number, pad: number): boolean {
-  return cars.some((c) => {
-    const [lx, ly] = toCarLocal(c, x, y);
-    return Math.abs(lx) < c.hl + pad && Math.abs(ly) < c.hw + pad;
-  });
+  return cars.some((c) => carContains(c, x, y, pad));
 }
 
 /** Rotate-and-walk ("tank") controls. Cars push the player out of the way. */
@@ -52,6 +49,7 @@ export function stepOnFoot(p: Player, dt: number, input: Input, world: SolidQuer
 export function findCarToEnter(p: Player, cars: readonly Car[]): Car | null {
   let best: Car | null = null, bestDist: number = PLAYER.enterReach;
   for (const c of cars) {
+    if (c.wrecked || c.burning !== null) continue;
     const [lx, ly] = toCarLocal(c, p.x, p.y);
     const d = Math.hypot(Math.max(Math.abs(lx) - c.hl, 0), Math.max(Math.abs(ly) - c.hw, 0));
     if (d < bestDist) { bestDist = d; best = c; }

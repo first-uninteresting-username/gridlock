@@ -33,3 +33,22 @@ export const PLAYER = {
 
 /** px/s to the km/h shown on the HUD. */
 export const KMH_PER_PX = 0.25;
+
+export const DAMAGE = {
+  carHealth: 100,
+  /** Below this health a car smokes. */
+  smokeBelow: 45,
+  /** Seconds a car burns before it explodes. */
+  burnTime: 2.2,
+  explosionRadius: 130,
+  /** Damage at the centre of a blast, falling off linearly to 0 at the radius. */
+  explosionDamage: 180,
+  explosionImpulse: 420,
+  /** Speed added to a car per bullet hit, in the bullet's direction. */
+  bulletImpulse: 18,
+} as const;
+
+export const PICKUP = {
+  radius: 22,
+  respawn: 30,
+} as const;

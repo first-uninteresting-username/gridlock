@@ -8,7 +8,7 @@ import { NO_INPUT, type Input, type SolidQuery } from '../src/sim/types';
 const DT = 1 / 120;
 const open: SolidQuery = { solidAt: () => false };
 const wallAt500: SolidQuery = { solidAt: (x) => x >= 500 };
-const gas: Input = { throttle: 1, steer: 0, handbrake: false };
+const gas: Input = { ...NO_INPUT, throttle: 1 };
 const run = (seconds: number, f: () => void) => { for (let t = 0; t < seconds; t += DT) f(); };
 
 describe('car', () => {
@@ -30,7 +30,7 @@ describe('car', () => {
 
   it('does not steer while stationary', () => {
     const c = createCar(0, 0, 0, 0);
-    run(1, () => stepCar(c, DT, { throttle: 0, steer: 1, handbrake: false }, open));
+    run(1, () => stepCar(c, DT, { ...NO_INPUT, steer: 1 }, open));
     expect(c.a).toBe(0);
   });
 
