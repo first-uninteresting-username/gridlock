@@ -3,6 +3,12 @@
 A top-down city driving game for the browser. Original project in the style of the late-90s
 top-down crime games: walk around a city, get into any parked car and drive it.
 
+The city is loosely modelled on **Nowiny**, a village in Poland's świętokrzyskie voivodeship whose
+housing estate was built from 1962 for workers of the nearby cement plant. In the map you can find
+the rows of apartment blocks, the cement works (with its silos and chimney) on the western edge, the
+shop strip along the main road, the blue-roofed "Perła" swimming pool and the GKS Nowiny football
+ground.
+
 Current scope is deliberately minimal: walking, entering and leaving cars, arcade driving with a
 handbrake drift, car-to-car and wall collisions, fake-3D buildings, and guns and melee weapons. Shot cars smoke,
 catch fire and explode, and the blast can set off nearby cars. Pedestrians (on foot only, there is
